@@ -9,15 +9,15 @@ export const getCurrentUser = query({
       .query("users")
       .withIndex("by_email", (q) => q.eq("email", args.email))
       .first();
-    
+
     if (!user) return null;
-    
+
     // Get the associated profile if it exists
     let profile = null;
     if (user.profileId) {
       profile = await ctx.db.get(user.profileId);
     }
-    
+
     return { user, profile };
   },
 });
@@ -34,13 +34,13 @@ export const createUser = mutation({
       .query("users")
       .withIndex("by_email", (q) => q.eq("email", args.email))
       .first();
-    
+
     if (existingUser) {
       throw new Error("User with this email already exists");
     }
-    
+
     const now = Date.now();
-    
+
     return await ctx.db.insert("users", {
       email: args.email,
       role: args.role,
@@ -65,7 +65,7 @@ export const updateUserPasskey = mutation({
       passkey: args.passkey,
       updatedAt: Date.now(),
     });
-    
+
     return await ctx.db.get(args.userId);
   },
 });
@@ -84,9 +84,9 @@ export const createOrUpdateProfile = mutation({
     if (!user) {
       throw new Error("User not found");
     }
-    
+
     const now = Date.now();
-    
+
     // Check if user already has a profile
     if (user.profileId) {
       // Update existing profile
@@ -97,7 +97,7 @@ export const createOrUpdateProfile = mutation({
         sport: args.sport,
         updatedAt: now,
       });
-      
+
       return await ctx.db.get(user.profileId);
     } else {
       // Create new profile
@@ -110,13 +110,13 @@ export const createOrUpdateProfile = mutation({
         createdAt: now,
         updatedAt: now,
       });
-      
+
       // Link profile to user
       await ctx.db.patch(args.userId, {
         profileId: profileId,
         updatedAt: now,
       });
-      
+
       return await ctx.db.get(profileId);
     }
   },

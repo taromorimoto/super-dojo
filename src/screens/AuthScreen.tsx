@@ -14,11 +14,13 @@ import { useAuthContext } from '../context/AuthContext';
 
 export default function AuthScreen() {
   const { t } = useTranslation();
-  const { signIn } = useAuthContext();
+  const { signIn, signUp } = useAuthContext();
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<'student' | 'sensei' | 'club_admin' | 'guardian'>('student');
 
-  const handleSignIn = async () => {
+  const handleAuth = async () => {
     if (!email.trim()) {
       Alert.alert(t('common.error'), 'Please enter your email');
       return;
@@ -31,9 +33,15 @@ export default function AuthScreen() {
 
     setIsLoading(true);
     try {
-      await signIn(email.trim().toLowerCase());
-    } catch (error) {
-      Alert.alert(t('common.error'), 'Failed to sign in. Please try again.');
+      if (isSignUp) {
+        await signUp(email.trim().toLowerCase(), selectedRole);
+        Alert.alert('Success', 'User created successfully!');
+      } else {
+        await signIn(email.trim().toLowerCase());
+      }
+    } catch (error: any) {
+      const errorMessage = error?.message || (isSignUp ? 'Failed to create user. Please try again.' : 'Failed to sign in. Please try again.');
+      Alert.alert(t('common.error'), errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -63,18 +71,67 @@ export default function AuthScreen() {
             editable={!isLoading}
           />
 
+          {isSignUp && (
+            <View style={styles.roleSelection}>
+              <Text style={styles.label}>Select your role:</Text>
+              <View style={styles.roleButtons}>
+                {(['student', 'sensei', 'club_admin', 'guardian'] as const).map((role) => (
+                  <TouchableOpacity
+                    key={role}
+                    style={[
+                      styles.roleButton,
+                      selectedRole === role && styles.roleButtonSelected,
+                    ]}
+                    onPress={() => setSelectedRole(role)}
+                    disabled={isLoading}
+                  >
+                    <Text
+                      style={[
+                        styles.roleButtonText,
+                        selectedRole === role && styles.roleButtonTextSelected,
+                      ]}
+                    >
+                      {role.replace('_', ' ')}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          )}
+
           <TouchableOpacity
             style={[styles.button, isLoading && styles.buttonDisabled]}
-            onPress={handleSignIn}
+            onPress={handleAuth}
             disabled={isLoading}
           >
             <Text style={styles.buttonText}>
-              {isLoading ? t('common.loading') : t('auth.signIn')}
+              {isLoading
+                ? t('common.loading')
+                : isSignUp
+                  ? 'Create Account'
+                  : t('auth.signIn')
+              }
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.switchButton}
+            onPress={() => setIsSignUp(!isSignUp)}
+            disabled={isLoading}
+          >
+            <Text style={styles.switchButtonText}>
+              {isSignUp
+                ? 'Already have an account? Sign In'
+                : "Don't have an account? Sign Up"
+              }
             </Text>
           </TouchableOpacity>
 
           <Text style={styles.helpText}>
-            For demo purposes, enter any email address to sign in
+            {isSignUp
+              ? 'Create a new account to join the martial arts community'
+              : 'For demo purposes, enter any email address to sign in'
+            }
           </Text>
         </View>
       </View>
@@ -156,5 +213,43 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
     fontStyle: 'italic',
+  },
+  roleSelection: {
+    marginBottom: 24,
+  },
+  roleButtons: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  roleButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    backgroundColor: '#fff',
+  },
+  roleButtonSelected: {
+    backgroundColor: '#2E7D32',
+    borderColor: '#2E7D32',
+  },
+  roleButtonText: {
+    fontSize: 14,
+    color: '#666',
+    textTransform: 'capitalize',
+  },
+  roleButtonTextSelected: {
+    color: '#fff',
+  },
+  switchButton: {
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  switchButtonText: {
+    fontSize: 14,
+    color: '#2E7D32',
+    textAlign: 'center',
+    textDecorationLine: 'underline',
   },
 });

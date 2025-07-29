@@ -2,7 +2,7 @@ import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 
 // Get all clubs
-export const getClubs = query({
+export const getAllClubs = query({
   args: {},
   handler: async (ctx) => {
     return await ctx.db.query("clubs").collect();
@@ -38,7 +38,7 @@ export const createClub = mutation({
   },
   handler: async (ctx, args) => {
     const now = Date.now();
-    
+
     return await ctx.db.insert("clubs", {
       name: args.name,
       location: args.location,
@@ -61,7 +61,7 @@ export const updateClub = mutation({
   },
   handler: async (ctx, args) => {
     const { id, ...updates } = args;
-    
+
     const updateData: any = {
       ...updates,
       updatedAt: Date.now(),

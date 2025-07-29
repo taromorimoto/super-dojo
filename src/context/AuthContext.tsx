@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useQuery } from 'convex/react';
+import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 
 interface User {
@@ -27,6 +27,7 @@ interface AuthContextType {
   profile: Profile | null;
   isLoading: boolean;
   signIn: (email: string) => Promise<void>;
+  signUp: (email: string, role: 'student' | 'sensei' | 'club_admin' | 'guardian') => Promise<void>;
   signOut: () => void;
   currentUserEmail: string | null;
   setCurrentUserEmail: (email: string | null) => void;
@@ -48,13 +49,15 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
-  
-  // Query current user data when email is set
+
   // Query current user data when email is set
   const currentUserData = useQuery(
     api.auth.getCurrentUser as any,
     currentUserEmail ? { email: currentUserEmail } : "skip"
   );
+
+  // Mutation for creating new users
+  const createUserMutation = useMutation(api.auth.createUser);
 
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -85,6 +88,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // For now, we'll just set the email to query the user
   };
 
+  const signUp = async (email: string, role: 'student' | 'sensei' | 'club_admin' | 'guardian') => {
+    try {
+      await createUserMutation({ email, role });
+      // After creating the user, sign them in
+      setCurrentUserEmail(email);
+    } catch (error) {
+      throw error; // Re-throw to let the calling component handle it
+    }
+  };
+
   const signOut = () => {
     setCurrentUserEmail(null);
     setUser(null);
@@ -96,6 +109,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     profile,
     isLoading,
     signIn,
+    signUp,
     signOut,
     currentUserEmail,
     setCurrentUserEmail,

@@ -13,6 +13,7 @@ import ProfileScreen from '../screens/ProfileScreen';
 import MarketplaceScreen from '../screens/MarketplaceScreen';
 import AttendanceScreen from '../screens/AttendanceScreen';
 import AuthScreen from '../screens/AuthScreen';
+import ProfileSetupScreen from '../screens/ProfileSetupScreen';
 
 // Import context/hooks
 import { useAuthContext } from '../context/AuthContext';
@@ -24,13 +25,13 @@ const Stack = createStackNavigator();
 function ClubsStack() {
   return (
     <Stack.Navigator>
-      <Stack.Screen 
-        name="ClubsList" 
-        component={ClubsScreen} 
+      <Stack.Screen
+        name="ClubsList"
+        component={ClubsScreen}
         options={{ headerShown: false }}
       />
-      <Stack.Screen 
-        name="ClubDetails" 
+      <Stack.Screen
+        name="ClubDetails"
         component={ClubDetailsScreen}
         options={{ title: 'Club Details' }}
       />
@@ -41,9 +42,9 @@ function ClubsStack() {
 function EventsStack() {
   return (
     <Stack.Navigator>
-      <Stack.Screen 
-        name="EventsList" 
-        component={EventsScreen} 
+      <Stack.Screen
+        name="EventsList"
+        component={EventsScreen}
         options={{ headerShown: false }}
       />
     </Stack.Navigator>
@@ -53,9 +54,9 @@ function EventsStack() {
 function MarketplaceStack() {
   return (
     <Stack.Navigator>
-      <Stack.Screen 
-        name="MarketplaceList" 
-        component={MarketplaceScreen} 
+      <Stack.Screen
+        name="MarketplaceList"
+        component={MarketplaceScreen}
         options={{ headerShown: false }}
       />
     </Stack.Navigator>
@@ -95,33 +96,33 @@ function MainTabNavigator() {
         headerShown: true,
       })}
     >
-      <Tab.Screen 
-        name="Home" 
+      <Tab.Screen
+        name="Home"
         component={HomeScreen}
         options={{ title: t('navigation.home') }}
       />
-      <Tab.Screen 
-        name="Clubs" 
+      <Tab.Screen
+        name="Clubs"
         component={ClubsStack}
         options={{ title: t('navigation.clubs') }}
       />
-      <Tab.Screen 
-        name="Events" 
+      <Tab.Screen
+        name="Events"
         component={EventsStack}
         options={{ title: t('navigation.events') }}
       />
-      <Tab.Screen 
-        name="Attendance" 
+      <Tab.Screen
+        name="Attendance"
         component={AttendanceScreen}
         options={{ title: t('navigation.attendance') }}
       />
-      <Tab.Screen 
-        name="Marketplace" 
+      <Tab.Screen
+        name="Marketplace"
         component={MarketplaceStack}
         options={{ title: t('navigation.marketplace') }}
       />
-      <Tab.Screen 
-        name="Profile" 
+      <Tab.Screen
+        name="Profile"
         component={ProfileScreen}
         options={{ title: t('navigation.profile') }}
       />
@@ -131,7 +132,7 @@ function MainTabNavigator() {
 
 // Main app navigator
 export default function AppNavigator() {
-  const { user, isLoading } = useAuthContext();
+  const { user, profile, isLoading } = useAuthContext();
 
   if (isLoading) {
     // TODO: Add loading screen component
@@ -141,7 +142,11 @@ export default function AppNavigator() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {user ? (
-        <Stack.Screen name="Main" component={MainTabNavigator} />
+        profile ? (
+          <Stack.Screen name="Main" component={MainTabNavigator} />
+        ) : (
+          <Stack.Screen name="ProfileSetup" component={ProfileSetupScreen} />
+        )
       ) : (
         <Stack.Screen name="Auth" component={AuthScreen} />
       )}
