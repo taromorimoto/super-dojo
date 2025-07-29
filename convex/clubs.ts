@@ -2,7 +2,7 @@ import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 
 // Get all clubs
-export const getAllClubs = query({
+export const getClubs = query({
   args: {},
   handler: async (ctx) => {
     return await ctx.db.query("clubs").collect();

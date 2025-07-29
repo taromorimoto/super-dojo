@@ -24,7 +24,7 @@ interface Club {
 
 export default function ClubsScreen({ navigation }: any) {
   const { t } = useTranslation();
-  const clubs = useQuery(api.clubs.getClubs as any);
+  const clubs = useQuery(api.clubs.getClubs);
 
   const renderClubCard = ({ item: club }: { item: Club }) => (
     <TouchableOpacity
@@ -35,18 +35,18 @@ export default function ClubsScreen({ navigation }: any) {
         <Text style={styles.clubName}>{club.name}</Text>
         <Ionicons name="chevron-forward" size={20} color="#666" />
       </View>
-      
+
       <View style={styles.clubInfo}>
         <View style={styles.infoRow}>
           <Ionicons name="location-outline" size={16} color="#666" />
           <Text style={styles.infoText}>{club.location}</Text>
         </View>
-        
+
         <View style={styles.infoRow}>
           <Ionicons name="time-outline" size={16} color="#666" />
           <Text style={styles.infoText}>{club.practiceSchedule}</Text>
         </View>
-        
+
         <View style={styles.sportsContainer}>
           {club.sports.map((sport) => (
             <View key={sport} style={styles.sportTag}>

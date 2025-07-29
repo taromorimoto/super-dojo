@@ -24,7 +24,7 @@ export default function ProfileSetupScreen() {
   const [isLoading, setIsLoading] = useState(false);
 
   // Get all clubs
-  const clubs = useQuery(api.clubs.getAllClubs);
+  const clubs = useQuery(api.clubs.getClubs);
 
   // Mutation for creating profile
   const createProfile = useMutation(api.auth.createOrUpdateProfile);
