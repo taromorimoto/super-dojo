@@ -1,0 +1,128 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No",
+    "hello": "Hello"
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signOut": "Sign Out",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot Password?",
+    "createAccount": "Create Account",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "signInWithPasskey": "Sign in with Passkey",
+    "createPasskey": "Create Passkey",
+    "passkeyNotSupported": "Passkeys are not supported on this device"
+  },
+  "navigation": {
+    "home": "Home",
+    "clubs": "Clubs",
+    "events": "Events",
+    "profile": "Profile",
+    "marketplace": "Marketplace",
+    "attendance": "Attendance"
+  },
+  "club": {
+    "clubs": "Clubs",
+    "clubName": "Club Name",
+    "location": "Location",
+    "practiceSchedule": "Practice Schedule",
+    "sports": "Sports",
+    "members": "Members",
+    "feed": "Club Feed",
+    "noClubs": "No clubs found",
+    "joinClub": "Join Club",
+    "clubInfo": "Club Information"
+  },
+  "profile": {
+    "profile": "Profile",
+    "name": "Name",
+    "danKyuGrade": "Dan/Kyu Grade",
+    "sport": "Sport",
+    "createProfile": "Create Profile",
+    "editProfile": "Edit Profile",
+    "noProfile": "No profile created yet"
+  },
+  "events": {
+    "events": "Events",
+    "eventName": "Event Name",
+    "description": "Description",
+    "startTime": "Start Time",
+    "endTime": "End Time",
+    "eventLocation": "Location",
+    "type": "Type",
+    "training": "Training",
+    "competition": "Competition",
+    "seminar": "Seminar",
+    "grading": "Grading",
+    "noEvents": "No events found",
+    "attendEvent": "Attend Event"
+  },
+  "attendance": {
+    "attendance": "Attendance",
+    "scanQR": "Scan QR Code",
+    "generateQR": "Generate QR Code",
+    "markAttendance": "Mark Attendance",
+    "attendanceRecorded": "Attendance recorded successfully",
+    "alreadyAttended": "Already marked as attended",
+    "qrExpired": "QR code has expired",
+    "invalidQR": "Invalid QR code"
+  },
+  "feed": {
+    "clubFeed": "Club Feed",
+    "announcement": "Announcement",
+    "keikoTheme": "Keiko Theme",
+    "general": "General",
+    "createPost": "Create Post",
+    "postTitle": "Post Title",
+    "postContent": "Post Content",
+    "postType": "Post Type",
+    "noFeedPosts": "No feed posts yet"
+  },
+  "marketplace": {
+    "marketplace": "Marketplace",
+    "listings": "Listings",
+    "createListing": "Create Listing",
+    "title": "Title",
+    "price": "Price",
+    "condition": "Condition",
+    "category": "Category",
+    "bogu": "Bogu",
+    "shinai": "Shinai",
+    "keikogi": "Keikogi",
+    "hakama": "Hakama",
+    "accessories": "Accessories",
+    "other": "Other",
+    "new": "New",
+    "excellent": "Excellent",
+    "good": "Good",
+    "fair": "Fair",
+    "contactSeller": "Contact Seller",
+    "noListings": "No listings found"
+  },
+  "sports": {
+    "kendo": "Kendo",
+    "iaido": "Iaido", 
+    "jodo": "Jodo",
+    "naginata": "Naginata"
+  },
+  "roles": {
+    "student": "Student",
+    "sensei": "Sensei",
+    "club_admin": "Club Admin",
+    "guardian": "Guardian"
+  }
+}

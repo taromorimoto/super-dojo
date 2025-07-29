@@ -1,0 +1,128 @@
+{
+  "common": {
+    "loading": "Ladataan...",
+    "error": "Virhe",
+    "save": "Tallenna",
+    "cancel": "Peruuta",
+    "delete": "Poista",
+    "edit": "Muokkaa",
+    "back": "Takaisin",
+    "next": "Seuraava",
+    "submit": "Lähetä",
+    "confirm": "Vahvista",
+    "yes": "Kyllä",
+    "no": "Ei",
+    "hello": "Hei"
+  },
+  "auth": {
+    "signIn": "Kirjaudu sisään",
+    "signOut": "Kirjaudu ulos",
+    "email": "Sähköposti",
+    "password": "Salasana",
+    "forgotPassword": "Unohditko salasanan?",
+    "createAccount": "Luo tili",
+    "noAccount": "Eikö sinulla ole tiliä?",
+    "hasAccount": "Onko sinulla jo tili?",
+    "signInWithPasskey": "Kirjaudu pääsy-avaimella",
+    "createPasskey": "Luo pääsy-avain",
+    "passkeyNotSupported": "Pääsy-avaimet eivät ole tuettuja tässä laitteessa"
+  },
+  "navigation": {
+    "home": "Koti",
+    "clubs": "Kerhot",
+    "events": "Tapahtumat",
+    "profile": "Profiili",
+    "marketplace": "Kauppapaikka",
+    "attendance": "Läsnäolo"
+  },
+  "club": {
+    "clubs": "Kerhot",
+    "clubName": "Kerhon nimi",
+    "location": "Sijainti",
+    "practiceSchedule": "Harjoitusaikataulu",
+    "sports": "Lajit",
+    "members": "Jäsenet",
+    "feed": "Kerhon syöte",
+    "noClubs": "Kerhoja ei löytynyt",
+    "joinClub": "Liity kerhoon",
+    "clubInfo": "Kerhon tiedot"
+  },
+  "profile": {
+    "profile": "Profiili",
+    "name": "Nimi",
+    "danKyuGrade": "Dan/Kyu-aste",
+    "sport": "Laji",
+    "createProfile": "Luo profiili",
+    "editProfile": "Muokkaa profiilia",
+    "noProfile": "Profiilia ei ole vielä luotu"
+  },
+  "events": {
+    "events": "Tapahtumat",
+    "eventName": "Tapahtuman nimi",
+    "description": "Kuvaus",
+    "startTime": "Alkamisaika",
+    "endTime": "Päättymisaika",
+    "eventLocation": "Sijainti",
+    "type": "Tyyppi",
+    "training": "Harjoitus",
+    "competition": "Kilpailu",
+    "seminar": "Seminaari",
+    "grading": "Arviointi",
+    "noEvents": "Tapahtumia ei löytynyt",
+    "attendEvent": "Osallistu tapahtumaan"
+  },
+  "attendance": {
+    "attendance": "Läsnäolo",
+    "scanQR": "Skannaa QR-koodi",
+    "generateQR": "Luo QR-koodi",
+    "markAttendance": "Merkitse läsnäolo",
+    "attendanceRecorded": "Läsnäolo merkitty onnistuneesti",
+    "alreadyAttended": "Jo merkitty läsnäolevaksi",
+    "qrExpired": "QR-koodi on vanhentunut",
+    "invalidQR": "Virheellinen QR-koodi"
+  },
+  "feed": {
+    "clubFeed": "Kerhon syöte",
+    "announcement": "Ilmoitus",
+    "keikoTheme": "Keikon teema",
+    "general": "Yleinen",
+    "createPost": "Luo julkaisu",
+    "postTitle": "Julkaisun otsikko",
+    "postContent": "Julkaisun sisältö",
+    "postType": "Julkaisun tyyppi",
+    "noFeedPosts": "Ei syötejulkaisuja vielä"
+  },
+  "marketplace": {
+    "marketplace": "Kauppapaikka",
+    "listings": "Ilmoitukset",
+    "createListing": "Luo ilmoitus",
+    "title": "Otsikko",
+    "price": "Hinta",
+    "condition": "Kunto",
+    "category": "Kategoria",
+    "bogu": "Bogu",
+    "shinai": "Shinai",
+    "keikogi": "Keikogi",
+    "hakama": "Hakama",
+    "accessories": "Lisävarusteet",
+    "other": "Muu",
+    "new": "Uusi",
+    "excellent": "Erinomainen",
+    "good": "Hyvä",
+    "fair": "Kohtalainen",
+    "contactSeller": "Ota yhteyttä myyjään",
+    "noListings": "Ilmoituksia ei löytynyt"
+  },
+  "sports": {
+    "kendo": "Kendo",
+    "iaido": "Iaido",
+    "jodo": "Jodo",
+    "naginata": "Naginata"
+  },
+  "roles": {
+    "student": "Oppilas",
+    "sensei": "Sensei",
+    "club_admin": "Kerhon ylläpitäjä",
+    "guardian": "Huoltaja"
+  }
+}
