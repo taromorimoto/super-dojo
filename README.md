@@ -1,4 +1,4 @@
-# Kendo Dojo
+# Super dojo
 
 A comprehensive martial arts club management application built with Expo React Native and Convex backend. Designed for Kendo, Iaido, Jodo, and Naginata practice tracking, club management, and community engagement.
 

@@ -1,6 +1,6 @@
 # Development Setup Guide
 
-This guide will help you set up the Kendo Dojo app for local development.
+This guide will help you set up the Super dojo app for local development.
 
 ## Prerequisites
 

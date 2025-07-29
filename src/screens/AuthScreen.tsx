@@ -40,13 +40,13 @@ export default function AuthScreen() {
   };
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container} 
+    <KeyboardAvoidingView
+      style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.title}>Kendo Dojo</Text>
+          <Text style={styles.title}>Super dojo</Text>
           <Text style={styles.subtitle}>Welcome to your martial arts community</Text>
         </View>
 
