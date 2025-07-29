@@ -210,16 +210,6 @@ npm run build:ios
 
 - Use TypeScript for all new code
 - Follow existing naming conventions
-- Add JSDoc comments for complex functions
+- Add comments for functions and components
 - Use meaningful variable names
 
-### Commit Messages
-
-Use conventional commit format:
-
-```
-feat: add QR code scanning functionality
-fix: resolve authentication state bug
-docs: update setup instructions
-test: add unit tests for club management
-```

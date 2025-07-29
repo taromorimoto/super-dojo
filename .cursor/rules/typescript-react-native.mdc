@@ -5,7 +5,7 @@ globs: *.ts,*.tsx
 # TypeScript & React Native Conventions
 
 ## Code Style Guidelines
-- Always use semicolons
+- Don't use semicolons
 - Use TypeScript for all new code with proper type annotations
 - Prefer interface over type for object definitions
 - Use meaningful variable and function names
