@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useQuery, useMutation } from 'convex/react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '../../convex/_generated/api';
 
 interface User {
@@ -78,14 +79,31 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   useEffect(() => {
     // Check for stored user session on app start
-    // In a real app, you'd check AsyncStorage or similar
-    setIsLoading(false);
+    const loadStoredAuth = async () => {
+      try {
+        const storedEmail = await AsyncStorage.getItem('userEmail');
+        if (storedEmail) {
+          setCurrentUserEmail(storedEmail);
+        } else {
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('Error loading stored auth:', error);
+        setIsLoading(false);
+      }
+    };
+
+    loadStoredAuth();
   }, []);
 
   const signIn = async (email: string) => {
     setCurrentUserEmail(email);
-    // In a real implementation, you'd handle passkey authentication here
-    // For now, we'll just set the email to query the user
+    // Store the email for persistence
+    try {
+      await AsyncStorage.setItem('userEmail', email);
+    } catch (error) {
+      console.error('Error storing user email:', error);
+    }
   };
 
   const signUp = async (email: string, role: 'student' | 'sensei' | 'club_admin' | 'guardian') => {
@@ -93,6 +111,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       await createUserMutation({ email, role });
       // After creating the user, sign them in
       setCurrentUserEmail(email);
+      // Store the email for persistence
+      await AsyncStorage.setItem('userEmail', email);
     } catch (error) {
       throw error; // Re-throw to let the calling component handle it
     }
@@ -102,6 +122,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setCurrentUserEmail(null);
     setUser(null);
     setProfile(null);
+    // Remove stored email
+    AsyncStorage.removeItem('userEmail').catch(error => {
+      console.error('Error removing stored user email:', error);
+    });
   };
 
   const value: AuthContextType = {
