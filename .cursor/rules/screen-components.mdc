@@ -1,0 +1,42 @@
+---
+globs: src/screens/*.tsx
+---
+
+# Screen Component Patterns
+
+## Screen Structure
+All screens are located in `src/screens/` and follow consistent patterns:
+
+### Core Screens
+- [HomeScreen.tsx](mdc:src/screens/HomeScreen.tsx) - Dashboard/main hub
+- [AuthScreen.tsx](mdc:src/screens/AuthScreen.tsx) - Login/registration
+- [ProfileSetupScreen.tsx](mdc:src/screens/ProfileSetupScreen.tsx) - Initial profile creation
+- [ClubsScreen.tsx](mdc:src/screens/ClubsScreen.tsx) - Club listing and search
+- [ClubDetailsScreen.tsx](mdc:src/screens/ClubDetailsScreen.tsx) - Individual club details
+- [EventsScreen.tsx](mdc:src/screens/EventsScreen.tsx) - Event management
+- [AttendanceScreen.tsx](mdc:src/screens/AttendanceScreen.tsx) - Attendance tracking
+- [MarketplaceScreen.tsx](mdc:src/screens/MarketplaceScreen.tsx) - Equipment marketplace
+- [ProfileScreen.tsx](mdc:src/screens/ProfileScreen.tsx) - User profile management
+
+## Screen Component Conventions
+- Use functional components with TypeScript
+- Implement proper navigation typing from React Navigation
+- Handle loading states for Convex queries
+- Implement error boundaries for graceful error handling
+- Use consistent styling patterns with StyleSheet.create()
+
+## Navigation Integration
+- Screens receive navigation props from [AppNavigator.tsx](mdc:src/navigation/AppNavigator.tsx)
+- Use typed navigation for parameter passing between screens
+- Implement proper back button handling and navigation flow
+
+## Data Integration
+- Use Convex useQuery hooks for reading data
+- Use Convex useMutation hooks for data modifications
+- Handle authentication state via [AuthContext.tsx](mdc:src/context/AuthContext.tsx)
+- Implement proper loading and error states
+
+## Internationalization
+- Use i18n system from [src/i18n/](mdc:src/i18n/) for text content
+- Support both English and Finnish locales
+- Use translation keys instead of hardcoded text

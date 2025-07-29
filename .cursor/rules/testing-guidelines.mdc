@@ -1,0 +1,36 @@
+---
+globs: **/*.test.ts,**/*.test.tsx,**/*.spec.ts,e2e/*.ts
+---
+
+# Testing Guidelines
+
+## Test Organization
+- Unit tests: Co-located with components in `__tests__` directories or `.test.tsx` files
+- E2E tests: Located in `e2e/` directory using Playwright
+- Test setup: [src/test/setup.ts](mdc:src/test/setup.ts) for Jest configuration
+
+## Unit Testing (Jest & React Native Testing Library)
+- Test component behavior, not implementation details
+- Use descriptive test names that explain the expected behavior
+- Mock Convex hooks and external dependencies
+- Test user interactions and state changes
+- Example: [HomeScreen.test.tsx](mdc:src/screens/__tests__/HomeScreen.test.tsx)
+
+## E2E Testing (Playwright)
+- Test critical user journeys end-to-end
+- Focus on authentication flows, navigation, and core features
+- Use page object model for complex interactions
+- Example: [auth.spec.ts](mdc:e2e/auth.spec.ts)
+
+## Best Practices
+- Write tests before fixing bugs (TDD approach)
+- Keep tests isolated and independent
+- Use meaningful assertions and error messages
+- Mock external services and APIs
+- Test both happy path and error scenarios
+
+## Commands
+- `npm test` - Run unit tests
+- `npm run test:watch` - Run tests in watch mode
+- `npm run test:e2e` - Run end-to-end tests
+- Coverage reports help identify untested code paths

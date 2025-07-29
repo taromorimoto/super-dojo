@@ -1,0 +1,44 @@
+---
+alwaysApply: true
+---
+
+# Super Dojo Project Structure
+
+This is a React Native/Expo app with Convex backend for martial arts club management.
+
+## Main Entry Points
+- [App.tsx](mdc:App.tsx) - Root React Native component
+- [index.ts](mdc:index.ts) - Metro bundler entry point
+
+## Directory Structure
+
+### Frontend (React Native/Expo)
+- `src/screens/` - Main app screens (Home, Auth, Clubs, Events, etc.)
+- `src/navigation/` - Navigation configuration with [AppNavigator.tsx](mdc:src/navigation/AppNavigator.tsx)
+- `src/context/` - React contexts, including [AuthContext.tsx](mdc:src/context/AuthContext.tsx)
+- `src/i18n/` - Internationalization with English and Finnish locales
+- `src/test/` - Test utilities and setup
+
+### Backend (Convex)
+- `convex/` - Backend functions and database schema
+- [convex/schema.ts](mdc:convex/schema.ts) - Database schema definitions
+- [convex/auth.ts](mdc:convex/auth.ts) - Authentication functions
+- [convex/clubs.ts](mdc:convex/clubs.ts) - Club management functions
+- [convex/attendance.ts](mdc:convex/attendance.ts) - Attendance tracking
+- [convex/clubFeed.ts](mdc:convex/clubFeed.ts) - Club feed and posts
+- `convex/_generated/` - Auto-generated Convex types (regenerate with `npx convex dev`)
+
+### Testing
+- `e2e/` - End-to-end tests using Playwright
+- `src/**/__tests__/` - Unit tests co-located with components
+
+### Configuration
+- [convex.json](mdc:convex.json) - Convex project configuration
+- [app.json](mdc:app.json) - Expo app configuration
+- [package.json](mdc:package.json) - Dependencies and scripts
+
+## Development Workflow
+Refer to [DEVELOPMENT.md](mdc:DEVELOPMENT.md) for setup instructions. Key commands:
+- `npm start` - Start Expo dev server
+- `npx convex dev` - Start Convex backend
+- `npm run seed` - Seed database with sample data

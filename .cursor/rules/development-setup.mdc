@@ -1,0 +1,58 @@
+---
+description: "Development setup, workflow, and troubleshooting"
+---
+
+# Development Setup & Workflow
+
+## Quick Start
+Refer to [DEVELOPMENT.md](mdc:DEVELOPMENT.md) for complete setup instructions.
+
+### Essential Commands
+```bash
+# Initial setup
+npm install
+npx convex dev  # Start backend, generates types in convex/_generated/
+npm run seed    # Populate database with sample data
+npm start       # Start Expo dev server
+
+# Development workflow
+npm run convex:dev    # Start Convex backend
+npm test             # Run unit tests
+npm run test:e2e     # Run end-to-end tests
+npx tsc --noEmit     # Type checking
+```
+
+## Environment Setup
+- Ensure `EXPO_PUBLIC_CONVEX_URL` is set in `.env` file
+- Generated Convex types in `convex/_generated/` must be from actual deployment
+- Node.js 18+ required
+
+## Common Development Issues
+
+### TypeScript Errors
+- Missing Convex types: Ensure `npx convex dev` is running
+- Check `convex/_generated/` contains actual generated files, not placeholders
+- Restart TypeScript server in IDE
+
+### Convex Connection Issues
+- Verify `EXPO_PUBLIC_CONVEX_URL` in environment
+- Confirm Convex dev server is running
+- Check deployment status in Convex dashboard
+
+### Expo Issues
+- Clear cache: `npx expo start -c`
+- Reset: `rm -rf node_modules && npm install`
+
+## Code Quality
+- Use TypeScript strict mode
+- Run tests before committing
+- Follow conventional commit messages
+- Add JSDoc for complex functions
+- Use meaningful variable names
+
+## File Reference Patterns
+- Configuration: [app.json](mdc:app.json), [convex.json](mdc:convex.json)
+- Main app entry: [App.tsx](mdc:App.tsx)
+- Navigation: [AppNavigator.tsx](mdc:src/navigation/AppNavigator.tsx)
+- Authentication: [AuthContext.tsx](mdc:src/context/AuthContext.tsx)
+- Backend schema: [schema.ts](mdc:convex/schema.ts)

@@ -1,0 +1,34 @@
+---
+globs: *.ts,*.tsx
+---
+
+# TypeScript & React Native Conventions
+
+## Code Style Guidelines
+- Always use semicolons
+- Use TypeScript for all new code with proper type annotations
+- Prefer interface over type for object definitions
+- Use meaningful variable and function names
+- Add JSDoc comments for complex functions
+
+## React Native Specific
+- Use functional components with hooks over class components
+- Import React Native components from 'react-native'
+- Use StyleSheet.create() for component styles
+- Follow React Native naming conventions (PascalCase for components)
+
+## File Organization
+- Components should be in PascalCase (e.g., `HomeScreen.tsx`)
+- Utility functions in camelCase (e.g., `formatDate.ts`)
+- Constants in UPPER_SNAKE_CASE
+- Co-locate tests with components using `__tests__` directories or `.test.tsx` suffix
+
+## Navigation
+- Screens are in `src/screens/` and should end with `Screen.tsx`
+- Navigation is handled by [AppNavigator.tsx](mdc:src/navigation/AppNavigator.tsx)
+- Use typed navigation props for screen components
+
+## Context & State
+- Use React Context for global state (see [AuthContext.tsx](mdc:src/context/AuthContext.tsx))
+- Prefer hooks for local component state
+- Use Convex useQuery and useMutation hooks for backend data

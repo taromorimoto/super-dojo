@@ -1,0 +1,38 @@
+---
+globs: convex/*.ts
+---
+
+# Convex Backend Development Patterns
+
+## Function Organization
+- Query functions for reading data (use `query`)
+- Mutation functions for writing data (use `mutation`)
+- Actions for external API calls or complex operations (use `action`)
+
+## Schema Management
+- All database tables defined in [schema.ts](mdc:convex/schema.ts)
+- Use Convex validators (v.object, v.string, etc.) for type safety
+- Update schema carefully as it affects existing data
+
+## Authentication
+- Authentication logic in [auth.ts](mdc:convex/auth.ts)
+- Use `ctx.auth.getUserIdentity()` to get current user
+- Protect sensitive operations with user authentication checks
+
+## Data Access Patterns
+- Clubs data: [clubs.ts](mdc:convex/clubs.ts)
+- Attendance tracking: [attendance.ts](mdc:convex/attendance.ts)
+- Club feeds/posts: [clubFeed.ts](mdc:convex/clubFeed.ts)
+
+## Best Practices
+- Always validate inputs using Convex validators
+- Handle errors gracefully and return meaningful error messages
+- Use indexes for frequently queried fields
+- Keep functions focused and single-purpose
+- Use TypeScript types from `convex/_generated/api` for type safety
+
+## Development Workflow
+- Run `npx convex dev` for local development
+- Use `npm run seed` to populate database with sample data
+- Monitor functions in Convex dashboard at https://dashboard.convex.dev
+- Generated types in `convex/_generated/` should not be manually edited
