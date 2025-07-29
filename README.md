@@ -115,6 +115,18 @@ npm run test:watch      # Run tests in watch mode
 npm run test:e2e        # Run Playwright tests
 ```
 
+## AI Integration (MCP)
+
+This project includes Convex MCP (Model Context Protocol) support for AI assistants like Cursor and Claude. MCP allows AI to directly interact with your Convex backend for development and debugging.
+
+**Quick Start:**
+```bash
+npm run mcp:dev         # Start MCP server for development
+npm run mcp:prod        # Start MCP server for production
+```
+
+For complete setup instructions and usage examples, see [CONVEX-MCP.md](./CONVEX-MCP.md).
+
 ## Database Schema
 
 ### Core Tables

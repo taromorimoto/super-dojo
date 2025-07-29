@@ -25,6 +25,7 @@
     "seed": "npx convex run seed:seedData",
     "seed:dev": "npx convex run seed:seedData --env-file .env.development",
     "seed:prod": "npx convex run seed:seedData --env-file .env.production",
+    "convex:mcp": "CONVEX_DEPLOYMENT=flippant-starfish-48 npx convex mcp start",
     "build:web": "EXPO_PUBLIC_ENV=production expo export --platform web",
     "build:web:dev": "EXPO_PUBLIC_ENV=development expo export --platform web",
     "build:android": "EXPO_PUBLIC_ENV=production eas build --platform android",

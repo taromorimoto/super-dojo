@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "convex": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "convex@latest",
+        "mcp",
+        "start"
+      ],
+      "env": {
+        "CONVEX_DEPLOYMENT": "flippant-starfish-48"
+      }
+    }
+  }
+}
