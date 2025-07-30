@@ -15,10 +15,11 @@ import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthContext } from '../context/AuthContext';
+import { useLocalSearchParams } from 'expo-router';
 
-export default function ClubDetailsScreen({ route, navigation }: any) {
+export default function ClubDetailsScreen() {
   const { t } = useTranslation();
-  const { clubId } = route.params;
+  const { id: clubId } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuthContext();
 
   const club = useQuery(api.clubs.getClub, { id: clubId as any });

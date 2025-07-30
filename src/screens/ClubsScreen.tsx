@@ -13,6 +13,7 @@ import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthContext } from '../context/AuthContext';
+import { Link } from 'expo-router';
 
 interface Club {
   _id: string;
@@ -24,7 +25,7 @@ interface Club {
   updatedAt: number;
 }
 
-export default function ClubsScreen({ navigation }: any) {
+export default function ClubsScreen() {
   const { t } = useTranslation();
   const { user } = useAuthContext();
   const clubs = useQuery(api.clubs.getClubs);
@@ -101,10 +102,8 @@ export default function ClubsScreen({ navigation }: any) {
     const isLoading = loadingClubIds.has(club._id);
 
     return (
-      <TouchableOpacity
-        style={styles.clubCard}
-        onPress={() => navigation.navigate('ClubDetails', { clubId: club._id })}
-      >
+      <Link href={`/(tabs)/clubs/${club._id}`} asChild>
+        <TouchableOpacity style={styles.clubCard}>
         <View style={styles.clubHeader}>
           <Text style={styles.clubName}>{club.name}</Text>
           <Ionicons name="chevron-forward" size={20} color="#666" />
@@ -163,7 +162,8 @@ export default function ClubsScreen({ navigation }: any) {
             </TouchableOpacity>
           </View>
         )}
-      </TouchableOpacity>
+        </TouchableOpacity>
+      </Link>
     );
   };
 

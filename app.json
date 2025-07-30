@@ -38,8 +38,10 @@
       "startUrl": "/",
       "preferRelatedApplications": false
     },
+    "scheme": "super-dojo",
     "plugins": [
-      "expo-localization"
+      "expo-localization",
+      "expo-router"
     ],
     "extra": {
       "eas": {
