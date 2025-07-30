@@ -34,8 +34,10 @@ export default function ProfileScreen() {
     sport: profile?.sport || 'kendo' as 'kendo' | 'iaido' | 'jodo' | 'naginata',
   });
 
-  // Get user's clubs
-  const userClubs = useQuery(api.clubs.getUserClubs);
+  // Get user's club memberships and all clubs
+  const userMemberships = useQuery(api.clubs.getUserMemberships,
+    user ? { userId: user._id } : "skip"
+  );
   const allClubs = useQuery(api.clubs.getClubs);
 
   // Mutations
@@ -241,17 +243,17 @@ export default function ProfileScreen() {
           <Text style={styles.noClubText}>{t('profile.noPrimaryClub')}</Text>
         )}
 
-        {userClubs && userClubs.length > 0 && (
+        {userMemberships && userMemberships.length > 0 && (
           <View style={styles.memberClubsContainer}>
             <Text style={styles.fieldLabel}>{t('profile.memberOfClubs')}</Text>
-            {userClubs.map((membership) => {
-              const club = allClubs?.find(c => c._id === membership.clubId);
+            {userMemberships.map((membershipData) => {
+              const club = membershipData.club;
               if (!club) return null;
               
               return (
-                <View key={membership._id} style={styles.memberClubItem}>
+                <View key={membershipData._id} style={styles.memberClubItem}>
                   <Text style={styles.memberClubName}>{club.name}</Text>
-                  <Text style={styles.memberClubRole}>{membership.role}</Text>
+                  <Text style={styles.memberClubRole}>{membershipData.role}</Text>
                   {profile.clubId !== club._id && (
                     <TouchableOpacity
                       style={styles.setPrimaryButton}
