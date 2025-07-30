@@ -101,7 +101,6 @@ export const isUserMemberOfClub = query({
     clubId: v.id("clubs"),
   },
   handler: async (ctx, args) => {
-    console.log("isUserMemberOfClub", args);
     const membership = await ctx.db
       .query("clubMemberships")
       .withIndex("by_user_club", (q) => q.eq("userId", args.userId).eq("clubId", args.clubId))
@@ -125,10 +124,13 @@ export const joinClub = mutation({
       throw new Error("Not authenticated");
     }
 
+    // Extract user ID from compound subject (format: userId|sessionId)
+    const userId = identity.subject.split('|')[0] as Id<"users">;
+
     // Check if already a member
     const existingMembership = await ctx.db
       .query("clubMemberships")
-      .withIndex("by_user_club", (q) => q.eq("userId", identity.subject as Id<"users">).eq("clubId", args.clubId))
+      .withIndex("by_user_club", (q) => q.eq("userId", userId).eq("clubId", args.clubId))
       .first();
 
     if (existingMembership) {
@@ -147,7 +149,7 @@ export const joinClub = mutation({
     // Create new membership
     const now = Date.now();
     return await ctx.db.insert("clubMemberships", {
-      userId: identity.subject as Id<"users">,
+      userId: userId,
       clubId: args.clubId,
       role: "member",
       status: "active",
@@ -166,9 +168,12 @@ export const leaveClub = mutation({
       throw new Error("Not authenticated");
     }
 
+    // Extract user ID from compound subject (format: userId|sessionId)
+    const userId = identity.subject.split('|')[0] as Id<"users">;
+
     const membership = await ctx.db
       .query("clubMemberships")
-      .withIndex("by_user_club", (q) => q.eq("userId", identity.subject as Id<"users">).eq("clubId", args.clubId))
+      .withIndex("by_user_club", (q) => q.eq("userId", userId).eq("clubId", args.clubId))
       .filter((q) => q.eq(q.field("status"), "active"))
       .first();
 
@@ -199,8 +204,11 @@ export const updateMemberRole = mutation({
       throw new Error("Not authenticated");
     }
 
+    // Extract user ID from compound subject (format: userId|sessionId)
+    const userId = identity.subject.split('|')[0];
+
     // Check if current user is admin of this club
-    const isAdmin = await isClubAdmin(ctx, identity.subject, args.clubId);
+    const isAdmin = await isClubAdmin(ctx, userId, args.clubId);
     if (!isAdmin) {
       throw new Error("Only club admins can change member roles");
     }
@@ -240,6 +248,9 @@ export const createClub = mutation({
       throw new Error("Not authenticated");
     }
 
+    // Extract user ID from compound subject (format: userId|sessionId)
+    const userId = identity.subject.split('|')[0] as Id<"users">;
+
     const now = Date.now();
 
     // Create the club
@@ -254,7 +265,7 @@ export const createClub = mutation({
 
     // Make the creator an admin member of the club
     await ctx.db.insert("clubMemberships", {
-      userId: identity.subject as Id<"users">,
+      userId: userId,
       clubId: clubId,
       role: "admin",
       status: "active",
@@ -281,8 +292,11 @@ export const updateClub = mutation({
       throw new Error("Not authenticated");
     }
 
+    // Extract user ID from compound subject (format: userId|sessionId)
+    const userId = identity.subject.split('|')[0];
+
     // Check if user is admin of this club
-    const isAdmin = await isClubAdmin(ctx, identity.subject, args.id);
+    const isAdmin = await isClubAdmin(ctx, userId, args.id);
     if (!isAdmin) {
       throw new Error("Only club admins can update club information");
     }

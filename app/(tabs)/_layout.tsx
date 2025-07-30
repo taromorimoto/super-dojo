@@ -1,5 +1,5 @@
-import React from 'react';
-import { Redirect, Tabs } from 'expo-router';
+import React, { useEffect } from 'react';
+import { Tabs, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthContext } from '../../src/context/AuthContext';
@@ -8,19 +8,32 @@ import LoadingScreen from '../../src/components/LoadingScreen';
 export default function TabsLayout() {
   const { user, profile, isLoading } = useAuthContext();
   const { t } = useTranslation();
+  const router = useRouter();
+
+  useEffect(() => {
+    // Only navigate when we have stable auth state (not loading)
+    if (isLoading) return;
+
+    // If not authenticated, redirect to auth
+    if (!user) {
+      router.replace('/(auth)');
+      return;
+    }
+
+    // If authenticated but no profile, redirect to profile setup
+    if (user && !profile) {
+      router.replace('/(auth)/profile-setup');
+      return;
+    }
+  }, [user, profile, isLoading, router]);
 
   if (isLoading) {
     return <LoadingScreen />;
   }
 
-  // If not authenticated, redirect to auth
-  if (!user) {
-    return <Redirect href="/(auth)" />;
-  }
-
-  // If authenticated but no profile, redirect to profile setup
-  if (!profile) {
-    return <Redirect href="/(auth)/profile-setup" />;
+  // Only render tabs if user is authenticated and has profile
+  if (!user || !profile) {
+    return <LoadingScreen />;
   }
 
   return (

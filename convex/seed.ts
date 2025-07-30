@@ -1,5 +1,6 @@
 import { mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { Id } from "./_generated/dataModel";
 
 // Force clear ALL data - for development emergencies
 export const forceClearAll = mutation({
@@ -102,7 +103,7 @@ export const seedData = mutation({
         danKyuGrade: "7 dan",
         clubId: helsinkiKendoClub,
         sport: "kendo" as const,
-        userId: "demo-sensei-id", // Will be updated when real user signs up
+        userId: "demo-sensei-id" as Id<"users">, // Will be updated when real user signs up
         userEmail: "sensei@helsinkikendo.fi",
         createdAt: now,
         updatedAt: now,
@@ -112,7 +113,7 @@ export const seedData = mutation({
         danKyuGrade: "2 kyu",
         clubId: helsinkiKendoClub,
         sport: "kendo" as const,
-        userId: "demo-student-id", // Will be updated when real user signs up
+        userId: "demo-student-id" as Id<"users">, // Will be updated when real user signs up
         userEmail: "student@example.com",
         createdAt: now,
         updatedAt: now,
@@ -122,7 +123,7 @@ export const seedData = mutation({
         danKyuGrade: "1 dan",
         clubId: tampereKendoClub,
         sport: "iaido" as const,
-        userId: "demo-anna-id", // Will be updated when real user signs up
+        userId: "demo-anna-id" as Id<"users">, // Will be updated when real user signs up
         userEmail: "anna@example.com",
         createdAt: now,
         updatedAt: now,
@@ -132,7 +133,7 @@ export const seedData = mutation({
         danKyuGrade: "5 dan",
         clubId: espooBudoClub,
         sport: "naginata" as const,
-        userId: "demo-admin-id", // Will be updated when real user signs up
+        userId: "demo-admin-id" as Id<"users">, // Will be updated when real user signs up
         userEmail: "admin@espoobudo.fi",
         createdAt: now,
         updatedAt: now,
@@ -146,11 +147,11 @@ export const seedData = mutation({
 
     // Create club memberships for demo accounts
     const memberships = [
-      { userId: "demo-sensei-id", clubId: helsinkiKendoClub, role: "admin" as const },
-      { userId: "demo-student-id", clubId: helsinkiKendoClub, role: "member" as const },
-      { userId: "demo-anna-id", clubId: tampereKendoClub, role: "admin" as const },
-      { userId: "demo-anna-id", clubId: helsinkiKendoClub, role: "member" as const },
-      { userId: "demo-admin-id", clubId: espooBudoClub, role: "admin" as const },
+      { userId: "demo-sensei-id" as Id<"users">, clubId: helsinkiKendoClub, role: "admin" as const },
+      { userId: "demo-student-id" as Id<"users">, clubId: helsinkiKendoClub, role: "member" as const },
+      { userId: "demo-anna-id" as Id<"users">, clubId: tampereKendoClub, role: "admin" as const },
+      { userId: "demo-anna-id" as Id<"users">, clubId: helsinkiKendoClub, role: "member" as const },
+      { userId: "demo-admin-id" as Id<"users">, clubId: espooBudoClub, role: "admin" as const },
     ];
 
     await Promise.all(
@@ -167,7 +168,7 @@ export const seedData = mutation({
     // Create sample club feed posts
     await ctx.db.insert("clubFeed", {
       clubId: helsinkiKendoClub,
-      authorId: "demo-sensei-id",
+      authorId: "demo-sensei-id" as Id<"users">,
       title: "Next Keiko Theme: Basic Men Strikes",
       content: "This week we will focus on proper men striking technique. Please bring your full bogu and arrive 15 minutes early for warm-up.",
       type: "keiko_theme",
@@ -177,7 +178,7 @@ export const seedData = mutation({
 
     await ctx.db.insert("clubFeed", {
       clubId: helsinkiKendoClub,
-      authorId: "demo-sensei-id",
+      authorId: "demo-sensei-id" as Id<"users">,
       title: "Club Tournament Announcement",
       content: "Our annual club tournament will be held on March 15th. Registration is now open. Please see the notice board for details.",
       type: "announcement",
