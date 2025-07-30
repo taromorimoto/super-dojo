@@ -1,5 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { Id } from "./_generated/dataModel";
 
 // Helper function to check if user is admin of a club
 const isClubAdmin = async (ctx: any, userId: string, clubId: string): Promise<boolean> => {
@@ -74,7 +75,7 @@ export const createClubFeedPost = mutation({
 
     return await ctx.db.insert("clubFeed", {
       clubId: args.clubId,
-      authorId: identity.subject,
+      authorId: identity.subject as Id<"users">,
       title: args.title,
       content: args.content,
       type: args.type,

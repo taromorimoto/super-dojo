@@ -1,5 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { Id } from "./_generated/dataModel";
 
 // Helper function to check if user is admin of a club
 const isClubAdmin = async (ctx: any, userId: string, clubId: string): Promise<boolean> => {
@@ -72,7 +73,7 @@ export const getClubMembersWithRoles = query({
 
 // Get user's club memberships
 export const getUserMemberships = query({
-  args: { userId: v.string() },
+  args: { userId: v.id("users") },
   handler: async (ctx, args) => {
     const memberships = await ctx.db
       .query("clubMemberships")
@@ -96,10 +97,11 @@ export const getUserMemberships = query({
 // Check if user is member of a club
 export const isUserMemberOfClub = query({
   args: {
-    userId: v.string(),
+    userId: v.id("users"),
     clubId: v.id("clubs"),
   },
   handler: async (ctx, args) => {
+    console.log("isUserMemberOfClub", args);
     const membership = await ctx.db
       .query("clubMemberships")
       .withIndex("by_user_club", (q) => q.eq("userId", args.userId).eq("clubId", args.clubId))
@@ -126,7 +128,7 @@ export const joinClub = mutation({
     // Check if already a member
     const existingMembership = await ctx.db
       .query("clubMemberships")
-      .withIndex("by_user_club", (q) => q.eq("userId", identity.subject).eq("clubId", args.clubId))
+      .withIndex("by_user_club", (q) => q.eq("userId", identity.subject as Id<"users">).eq("clubId", args.clubId))
       .first();
 
     if (existingMembership) {
@@ -145,7 +147,7 @@ export const joinClub = mutation({
     // Create new membership
     const now = Date.now();
     return await ctx.db.insert("clubMemberships", {
-      userId: identity.subject,
+      userId: identity.subject as Id<"users">,
       clubId: args.clubId,
       role: "member",
       status: "active",
@@ -166,7 +168,7 @@ export const leaveClub = mutation({
 
     const membership = await ctx.db
       .query("clubMemberships")
-      .withIndex("by_user_club", (q) => q.eq("userId", identity.subject).eq("clubId", args.clubId))
+      .withIndex("by_user_club", (q) => q.eq("userId", identity.subject as Id<"users">).eq("clubId", args.clubId))
       .filter((q) => q.eq(q.field("status"), "active"))
       .first();
 
@@ -188,7 +190,7 @@ export const leaveClub = mutation({
 export const updateMemberRole = mutation({
   args: {
     clubId: v.id("clubs"),
-    targetUserId: v.string(),
+    targetUserId: v.id("users"),
     newRole: v.union(v.literal("member"), v.literal("admin")),
   },
   handler: async (ctx, args) => {
@@ -252,7 +254,7 @@ export const createClub = mutation({
 
     // Make the creator an admin member of the club
     await ctx.db.insert("clubMemberships", {
-      userId: identity.subject,
+      userId: identity.subject as Id<"users">,
       clubId: clubId,
       role: "admin",
       status: "active",

@@ -89,7 +89,15 @@
     "signOutConfirm": "Oletko varma, että haluat kirjautua ulos?",
     "profileUpdated": "Profiili päivitetty onnistuneesti",
     "failedToUpdate": "Profiilin päivittäminen epäonnistui",
-    "failedToChangeClub": "Pääseuran vaihtaminen epäonnistui"
+    "failedToChangeClub": "Pääseuran vaihtaminen epäonnistui",
+    "deleteAccount": "Poista tili",
+    "deleteAccountTitle": "Poista tilisi",
+    "deleteAccountWarning": "Tätä toimintoa ei voi peruuttaa. Tilisi ja kaikki siihen liittyvät tiedot poistetaan pysyvästi.",
+    "deleteAccountConfirm": "Oletko varma, että haluat poistaa tilisi pysyvästi?",
+    "typeDeleteToConfirm": "Kirjoita 'DELETE' vahvistaaksesi",
+    "deletePlaceholder": "Kirjoita DELETE tähän",
+    "accountDeleted": "Tili poistettu onnistuneesti",
+    "deleteAccountFailed": "Tilin poistaminen epäonnistui"
   },
   "events": {
     "events": "Tapahtumat",

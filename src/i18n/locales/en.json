@@ -89,7 +89,15 @@
     "signOutConfirm": "Are you sure you want to sign out?",
     "profileUpdated": "Profile updated successfully",
     "failedToUpdate": "Failed to update profile",
-    "failedToChangeClub": "Failed to change primary club"
+    "failedToChangeClub": "Failed to change primary club",
+    "deleteAccount": "Delete Account",
+    "deleteAccountTitle": "Delete Your Account",
+    "deleteAccountWarning": "This action cannot be undone. Your account and all associated data will be permanently deleted.",
+    "deleteAccountConfirm": "Are you sure you want to permanently delete your account?",
+    "typeDeleteToConfirm": "Type 'DELETE' to confirm",
+    "deletePlaceholder": "Type DELETE here",
+    "accountDeleted": "Account deleted successfully",
+    "deleteAccountFailed": "Failed to delete account"
   },
   "events": {
     "events": "Events",

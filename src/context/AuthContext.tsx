@@ -2,10 +2,10 @@ import React, { createContext, useContext, ReactNode } from 'react';
 import { useQuery } from 'convex/react';
 import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from '../../convex/_generated/api';
-import { Doc } from '../../convex/_generated/dataModel';
+import { Doc, Id } from '../../convex/_generated/dataModel';
 
 interface User {
-  _id: string;
+  _id: Id<"users">;
   email: string;
   name?: string;
 }

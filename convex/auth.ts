@@ -2,6 +2,7 @@ import { convexAuth } from "@convex-dev/auth/server";
 import { Password } from "@convex-dev/auth/providers/Password";
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { Id } from "./_generated/dataModel";
 
 // Standard Convex Auth setup with Password provider
 export const { auth, signIn, signOut, store } = convexAuth({
@@ -285,5 +286,93 @@ export const setPrimaryClub = mutation({
     });
 
     return await ctx.db.get(profile._id);
+  },
+});
+
+// Cascade delete user and all related data
+export const deleteUserAccount = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    const userId = identity.subject as Id<"users">;
+
+    try {
+      // 1. Delete user's profile
+      const profile = await ctx.db
+        .query("profiles")
+        .withIndex("by_user", (q) => q.eq("userId", userId))
+        .first();
+      if (profile) {
+        await ctx.db.delete(profile._id);
+      }
+
+      // 2. Delete club memberships
+      const memberships = await ctx.db
+        .query("clubMemberships")
+        .withIndex("by_user", (q) => q.eq("userId", userId))
+        .collect();
+      await Promise.all(memberships.map(m => ctx.db.delete(m._id)));
+
+      // 3. Delete club feed posts authored by user
+      const feedPosts = await ctx.db
+        .query("clubFeed")
+        .filter((q) => q.eq(q.field("authorId"), userId))
+        .collect();
+      await Promise.all(feedPosts.map(p => ctx.db.delete(p._id)));
+
+      // 4. Delete attendance records recorded by user
+      const attendanceRecords = await ctx.db
+        .query("attendance")
+        .filter((q) => q.eq(q.field("recordedBy"), userId))
+        .collect();
+      await Promise.all(attendanceRecords.map(a => ctx.db.delete(a._id)));
+
+      // 5. Delete QR codes created by user
+      const qrCodes = await ctx.db
+        .query("attendanceQrCodes")
+        .filter((q) => q.eq(q.field("createdBy"), userId))
+        .collect();
+      await Promise.all(qrCodes.map(qr => ctx.db.delete(qr._id)));
+
+      // 6. Delete marketplace listings
+      const listings = await ctx.db
+        .query("marketplaceListings")
+        .withIndex("by_seller", (q) => q.eq("sellerId", userId))
+        .collect();
+      await Promise.all(listings.map(l => ctx.db.delete(l._id)));
+
+      // 7. Delete marketplace messages (sent and received)
+      const sentMessages = await ctx.db
+        .query("marketplaceMessages")
+        .filter((q) => q.eq(q.field("senderId"), userId))
+        .collect();
+      const receivedMessages = await ctx.db
+        .query("marketplaceMessages")
+        .filter((q) => q.eq(q.field("receiverId"), userId))
+        .collect();
+      await Promise.all([
+        ...sentMessages.map(m => ctx.db.delete(m._id)),
+        ...receivedMessages.map(m => ctx.db.delete(m._id))
+      ]);
+
+      // 8. Delete calendar syncs created by user
+      const calendarSyncs = await ctx.db
+        .query("calendarSyncs")
+        .filter((q) => q.eq(q.field("createdBy"), userId))
+        .collect();
+      await Promise.all(calendarSyncs.map(cs => ctx.db.delete(cs._id)));
+
+      // 9. Finally delete the user account
+      await ctx.db.delete(userId);
+
+      return { success: true, message: "Account and all associated data deleted successfully" };
+    } catch (error) {
+      console.error("Error deleting user account:", error);
+      throw new Error("Failed to delete account. Please try again or contact support.");
+    }
   },
 });

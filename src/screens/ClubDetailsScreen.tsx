@@ -16,6 +16,7 @@ import { api } from '../../convex/_generated/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthContext } from '../context/AuthContext';
 import { useLocalSearchParams } from 'expo-router';
+import { Id } from '../../convex/_generated/dataModel';
 
 export default function ClubDetailsScreen() {
   const { t } = useTranslation();
@@ -24,8 +25,8 @@ export default function ClubDetailsScreen() {
 
   const club = useQuery(api.clubs.getClub, { id: clubId as any });
   const clubMembers = useQuery(api.clubs.getClubMembersWithRoles, { clubId: clubId as any });
-    const userMembership = useQuery(api.clubs.isUserMemberOfClub,
-    user ? { userId: user._id, clubId: clubId as any } : "skip"
+  const userMembership = useQuery(api.clubs.isUserMemberOfClub,
+    user ? { userId: user._id as Id<"users">, clubId: clubId as any } : "skip"
   );
 
   const joinClub = useMutation(api.clubs.joinClub);
@@ -225,6 +226,7 @@ export default function ClubDetailsScreen() {
   console.log(club);
   console.log(userMembership);
   console.log(isMember);
+  console.log(user?._id);
 
   return (
     <ScrollView style={styles.container}>

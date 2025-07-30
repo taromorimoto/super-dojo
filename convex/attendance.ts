@@ -1,5 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { Id } from "./_generated/dataModel";
 
 // Helper function to check if user is admin of a club
 const isClubAdmin = async (ctx: any, userId: string, clubId: string): Promise<boolean> => {
@@ -58,7 +59,7 @@ export const generateAttendanceQrCode = mutation({
     return await ctx.db.insert("attendanceQrCodes", {
       eventId: args.eventId,
       code,
-      createdBy: identity.subject,
+      createdBy: identity.subject as Id<"users">,
       expiresAt,
       isActive: true,
       createdAt: now,
@@ -125,7 +126,7 @@ export const scanAttendanceQrCode = mutation({
       eventId: qrCode.eventId,
       profileId: args.profileId,
       attendedAt: Date.now(),
-      recordedBy: identity.subject,
+      recordedBy: identity.subject as Id<"users">,
       method: "qr_code",
       createdAt: Date.now(),
     });
@@ -173,7 +174,7 @@ export const recordAttendanceManually = mutation({
       eventId: args.eventId,
       profileId: args.profileId,
       attendedAt: Date.now(),
-      recordedBy: identity.subject,
+      recordedBy: identity.subject as Id<"users">,
       method: "manual",
       createdAt: Date.now(),
     });

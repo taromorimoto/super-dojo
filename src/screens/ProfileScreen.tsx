@@ -8,6 +8,7 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
@@ -27,6 +28,8 @@ export default function ProfileScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const [editingField, setEditingField] = useState<EditableField | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
   // Form state for editing
   const [formData, setFormData] = useState({
@@ -44,6 +47,7 @@ export default function ProfileScreen() {
   // Mutations
   const updateProfile = useMutation(api.auth.createOrUpdateProfile);
   const setPrimaryClub = useMutation(api.auth.setPrimaryClub);
+  const deleteUserAccount = useMutation(api.auth.deleteUserAccount);
 
   // Update form data when profile changes
   useEffect(() => {
@@ -101,6 +105,37 @@ export default function ProfileScreen() {
         { text: t('auth.signOut'), style: 'destructive', onPress: signOut },
       ]
     );
+  };
+
+  const handleDeleteAccount = () => {
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (deleteConfirmText !== 'DELETE') {
+      Alert.alert(t('common.error'), t('profile.typeDeleteToConfirm'));
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await deleteUserAccount();
+      Alert.alert(t('common.success'), t('profile.accountDeleted'), [
+        { text: t('common.confirm'), onPress: () => signOut() }
+      ]);
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      Alert.alert(t('common.error'), t('profile.deleteAccountFailed'));
+    } finally {
+      setIsLoading(false);
+      setShowDeleteModal(false);
+      setDeleteConfirmText('');
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
+    setDeleteConfirmText('');
   };
 
   const sports = ['kendo', 'iaido', 'jodo', 'naginata'] as const;
@@ -276,6 +311,11 @@ export default function ProfileScreen() {
           <Ionicons name="log-out-outline" size={24} color="#d32f2f" />
           <Text style={styles.signOutText}>{t('auth.signOut')}</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity style={styles.deleteAccountButton} onPress={handleDeleteAccount}>
+          <Ionicons name="trash-outline" size={24} color="#b71c1c" />
+          <Text style={styles.deleteAccountText}>{t('profile.deleteAccount')}</Text>
+        </TouchableOpacity>
       </View>
 
       {isLoading && (
@@ -283,6 +323,62 @@ export default function ProfileScreen() {
           <ActivityIndicator size="large" color="#2E7D32" />
         </View>
       )}
+
+      {/* Delete Account Confirmation Modal */}
+      <Modal
+        visible={showDeleteModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={handleCancelDelete}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Ionicons name="warning" size={48} color="#b71c1c" />
+              <Text style={styles.modalTitle}>{t('profile.deleteAccountTitle')}</Text>
+            </View>
+
+            <Text style={styles.modalWarning}>
+              {t('profile.deleteAccountWarning')}
+            </Text>
+
+            <Text style={styles.modalConfirmText}>
+              {t('profile.deleteAccountConfirm')}
+            </Text>
+
+            <Text style={styles.modalInstructionText}>
+              {t('profile.typeDeleteToConfirm')}
+            </Text>
+
+            <TextInput
+              style={styles.deleteConfirmInput}
+              value={deleteConfirmText}
+              onChangeText={setDeleteConfirmText}
+              placeholder={t('profile.deletePlaceholder')}
+              autoCapitalize="characters"
+            />
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.modalCancelButton} onPress={handleCancelDelete}>
+                <Text style={styles.modalCancelText}>{t('common.cancel')}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.modalDeleteButton,
+                  deleteConfirmText !== 'DELETE' && styles.modalDeleteButtonDisabled
+                ]}
+                onPress={handleConfirmDelete}
+                disabled={deleteConfirmText !== 'DELETE' || isLoading}
+              >
+                <Text style={styles.modalDeleteText}>
+                  {isLoading ? t('common.loading') : t('common.delete')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -474,10 +570,27 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#ffcdd2',
+    marginBottom: 10,
   },
   signOutText: {
     fontSize: 16,
     color: '#d32f2f',
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  deleteAccountButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 15,
+    backgroundColor: '#fce4ec',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#f8bbd9',
+  },
+  deleteAccountText: {
+    fontSize: 16,
+    color: '#b71c1c',
     fontWeight: '600',
     marginLeft: 8,
   },
@@ -496,5 +609,92 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+  },
+  modalHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#b71c1c',
+    marginTop: 12,
+    textAlign: 'center',
+  },
+  modalWarning: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 16,
+    lineHeight: 22,
+  },
+  modalConfirmText: {
+    fontSize: 16,
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 16,
+    fontWeight: '600',
+  },
+  modalInstructionText: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  deleteConfirmInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 20,
+    backgroundColor: '#f9f9f9',
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  modalCancelButton: {
+    flex: 1,
+    padding: 14,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  modalCancelText: {
+    fontSize: 16,
+    color: '#666',
+    fontWeight: '600',
+  },
+  modalDeleteButton: {
+    flex: 1,
+    padding: 14,
+    backgroundColor: '#b71c1c',
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  modalDeleteButtonDisabled: {
+    backgroundColor: '#ccc',
+  },
+  modalDeleteText: {
+    fontSize: 16,
+    color: '#fff',
+    fontWeight: '600',
   },
 });
