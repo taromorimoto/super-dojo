@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,11 +6,13 @@ import {
   FlatList,
   TouchableOpacity,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useQuery } from 'convex/react';
+import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Ionicons } from '@expo/vector-icons';
+import { useAuthContext } from '../context/AuthContext';
 
 interface Club {
   _id: string;
@@ -24,39 +26,146 @@ interface Club {
 
 export default function ClubsScreen({ navigation }: any) {
   const { t } = useTranslation();
+  const { user } = useAuthContext();
   const clubs = useQuery(api.clubs.getClubs);
-
-  const renderClubCard = ({ item: club }: { item: Club }) => (
-    <TouchableOpacity
-      style={styles.clubCard}
-      onPress={() => navigation.navigate('ClubDetails', { clubId: club._id })}
-    >
-      <View style={styles.clubHeader}>
-        <Text style={styles.clubName}>{club.name}</Text>
-        <Ionicons name="chevron-forward" size={20} color="#666" />
-      </View>
-
-      <View style={styles.clubInfo}>
-        <View style={styles.infoRow}>
-          <Ionicons name="location-outline" size={16} color="#666" />
-          <Text style={styles.infoText}>{club.location}</Text>
-        </View>
-
-        <View style={styles.infoRow}>
-          <Ionicons name="time-outline" size={16} color="#666" />
-          <Text style={styles.infoText}>{club.practiceSchedule}</Text>
-        </View>
-
-        <View style={styles.sportsContainer}>
-          {club.sports.map((sport) => (
-            <View key={sport} style={styles.sportTag}>
-              <Text style={styles.sportText}>{t(`sports.${sport}`)}</Text>
-            </View>
-          ))}
-        </View>
-      </View>
-    </TouchableOpacity>
+      const userMemberships = useQuery(api.clubs.getUserMemberships,
+    user ? { userId: user._id } : "skip"
   );
+
+  const joinClub = useMutation(api.clubs.joinClub);
+  const leaveClub = useMutation(api.clubs.leaveClub);
+
+  const [loadingClubIds, setLoadingClubIds] = useState<Set<string>>(new Set());
+
+  // Check if user is member of a club
+  const isMemberOfClub = (clubId: string) => {
+    return userMemberships?.some(membership => membership.clubId === clubId);
+  };
+
+  const handleJoinClub = async (clubId: string, clubName: string) => {
+    if (!user) {
+      Alert.alert(t('auth.required'), t('auth.loginToJoin'));
+      return;
+    }
+
+    setLoadingClubIds(prev => new Set([...prev, clubId]));
+
+    try {
+      await joinClub({ clubId: clubId as any });
+      Alert.alert(t('club.joinSuccess'), t('club.joinSuccessMessage', { clubName }));
+    } catch (error: any) {
+      Alert.alert(t('error.title'), error.message || t('club.joinError'));
+    } finally {
+      setLoadingClubIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(clubId);
+        return newSet;
+      });
+    }
+  };
+
+  const handleLeaveClub = (clubId: string, clubName: string) => {
+    Alert.alert(
+      t('club.leaveTitle'),
+      t('club.leaveConfirm', { clubName }),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('club.leave'),
+          style: 'destructive',
+          onPress: () => performLeaveClub(clubId)
+        }
+      ]
+    );
+  };
+
+  const performLeaveClub = async (clubId: string) => {
+    setLoadingClubIds(prev => new Set([...prev, clubId]));
+
+    try {
+      await leaveClub({ clubId: clubId as any });
+      Alert.alert(t('club.leaveSuccess'), t('club.leaveSuccessMessage'));
+    } catch (error: any) {
+      Alert.alert(t('error.title'), error.message || t('club.leaveError'));
+    } finally {
+      setLoadingClubIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(clubId);
+        return newSet;
+      });
+    }
+  };
+
+  const renderClubCard = ({ item: club }: { item: Club }) => {
+    const isMember = isMemberOfClub(club._id);
+    const isLoading = loadingClubIds.has(club._id);
+
+    return (
+      <TouchableOpacity
+        style={styles.clubCard}
+        onPress={() => navigation.navigate('ClubDetails', { clubId: club._id })}
+      >
+        <View style={styles.clubHeader}>
+          <Text style={styles.clubName}>{club.name}</Text>
+          <Ionicons name="chevron-forward" size={20} color="#666" />
+        </View>
+
+        <View style={styles.clubInfo}>
+          <View style={styles.infoRow}>
+            <Ionicons name="location-outline" size={16} color="#666" />
+            <Text style={styles.infoText}>{club.location}</Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Ionicons name="time-outline" size={16} color="#666" />
+            <Text style={styles.infoText}>{club.practiceSchedule}</Text>
+          </View>
+
+          <View style={styles.sportsContainer}>
+            {club.sports.map((sport) => (
+              <View key={sport} style={styles.sportTag}>
+                <Text style={styles.sportText}>{t(`sports.${sport}`)}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Membership Action Button */}
+        {user && (
+          <View style={styles.actionContainer}>
+            <TouchableOpacity
+              style={[
+                styles.actionButton,
+                isMember ? styles.leaveButton : styles.joinButton,
+                isLoading && styles.disabledButton
+              ]}
+              onPress={() =>
+                isMember
+                  ? handleLeaveClub(club._id, club.name)
+                  : handleJoinClub(club._id, club.name)
+              }
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <Text style={styles.actionButtonText}>{t('common.loading')}</Text>
+              ) : (
+                <>
+                  <Ionicons
+                    name={isMember ? "exit-outline" : "add-outline"}
+                    size={16}
+                    color="white"
+                  />
+                  <Text style={styles.actionButtonText}>
+                    {isMember ? t('club.leave') : t('club.join')}
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
@@ -172,6 +281,34 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: 'white',
     fontWeight: '500',
+  },
+  actionContainer: {
+    marginTop: 16,
+    alignItems: 'center',
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    minWidth: 150,
+    gap: 8,
+  },
+  joinButton: {
+    backgroundColor: '#4CAF50',
+  },
+  leaveButton: {
+    backgroundColor: '#F44336',
+  },
+  actionButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  disabledButton: {
+    opacity: 0.7,
   },
   emptyState: {
     flex: 1,

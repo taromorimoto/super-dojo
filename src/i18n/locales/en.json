@@ -12,7 +12,8 @@
     "confirm": "Confirm",
     "yes": "Yes",
     "no": "No",
-    "hello": "Hello"
+    "hello": "Hello",
+    "success": "Success"
   },
   "auth": {
     "signIn": "Sign In",
@@ -25,7 +26,10 @@
     "hasAccount": "Already have an account?",
     "signInWithPasskey": "Sign in with Passkey",
     "createPasskey": "Create Passkey",
-    "passkeyNotSupported": "Passkeys are not supported on this device"
+    "passkeyNotSupported": "Passkeys are not supported on this device",
+    "required": "Authentication Required",
+    "loginToJoin": "Please log in to join clubs",
+    "success": "Success"
   },
   "navigation": {
     "home": "Home",
@@ -45,7 +49,26 @@
     "feed": "Club Feed",
     "noClubs": "No clubs found",
     "joinClub": "Join Club",
-    "clubInfo": "Club Information"
+    "clubInfo": "Club Information",
+    "join": "Join",
+    "leave": "Leave",
+    "joinSuccess": "Successfully joined club",
+    "joinSuccessMessage": "You have successfully joined {{clubName}}",
+    "joinError": "Failed to join club",
+    "leaveTitle": "Leave Club",
+    "leaveConfirm": "Are you sure you want to leave {{clubName}}?",
+    "leaveSuccess": "Successfully left club",
+    "leaveSuccessMessage": "You have left the club",
+    "leaveError": "Failed to leave club",
+    "editClub": "Edit Club",
+    "updateSuccess": "Club information updated successfully",
+    "updateError": "Failed to update club information",
+    "promote": "promote to admin",
+    "demote": "demote to member",
+    "changeRole": "Change Role",
+    "changeRoleConfirm": "Are you sure you want to {{action}} {{userName}}?",
+    "roleUpdateSuccess": "Member role updated successfully",
+    "roleUpdateError": "Failed to update member role"
   },
   "profile": {
     "profile": "Profile",
@@ -115,7 +138,7 @@
   },
   "sports": {
     "kendo": "Kendo",
-    "iaido": "Iaido", 
+    "iaido": "Iaido",
     "jodo": "Jodo",
     "naginata": "Naginata"
   },
@@ -123,6 +146,11 @@
     "student": "Student",
     "sensei": "Sensei",
     "club_admin": "Club Admin",
-    "guardian": "Guardian"
+    "guardian": "Guardian",
+    "member": "Member",
+    "admin": "Admin"
+  },
+  "error": {
+    "title": "Error"
   }
 }

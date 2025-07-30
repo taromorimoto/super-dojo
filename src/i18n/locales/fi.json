@@ -12,7 +12,8 @@
     "confirm": "Vahvista",
     "yes": "Kyllä",
     "no": "Ei",
-    "hello": "Hei"
+    "hello": "Hei",
+    "success": "Onnistui"
   },
   "auth": {
     "signIn": "Kirjaudu sisään",
@@ -25,7 +26,10 @@
     "hasAccount": "Onko sinulla jo tili?",
     "signInWithPasskey": "Kirjaudu pääsy-avaimella",
     "createPasskey": "Luo pääsy-avain",
-    "passkeyNotSupported": "Pääsy-avaimet eivät ole tuettuja tässä laitteessa"
+    "passkeyNotSupported": "Pääsy-avaimet eivät ole tuettuja tässä laitteessa",
+    "required": "Tunnistautuminen vaaditaan",
+    "loginToJoin": "Kirjaudu sisään liittyäksesi kerhoihin",
+    "success": "Onnistui"
   },
   "navigation": {
     "home": "Koti",
@@ -45,7 +49,26 @@
     "feed": "Kerhon syöte",
     "noClubs": "Kerhoja ei löytynyt",
     "joinClub": "Liity kerhoon",
-    "clubInfo": "Kerhon tiedot"
+    "clubInfo": "Kerhon tiedot",
+    "join": "Liity",
+    "leave": "Poistu",
+    "joinSuccess": "Kerhoon liittyminen onnistui",
+    "joinSuccessMessage": "Olet onnistuneesti liittynyt kerhoon {{clubName}}",
+    "joinError": "Kerhoon liittyminen epäonnistui",
+    "leaveTitle": "Poistu kerhosta",
+    "leaveConfirm": "Oletko varma, että haluat poistua kerhosta {{clubName}}?",
+    "leaveSuccess": "Kerhosta poistuminen onnistui",
+    "leaveSuccessMessage": "Olet poistunut kerhosta",
+    "leaveError": "Kerhosta poistuminen epäonnistui",
+    "editClub": "Muokkaa kerhoa",
+    "updateSuccess": "Kerhon tiedot päivitetty onnistuneesti",
+    "updateError": "Kerhon tietojen päivittäminen epäonnistui",
+    "promote": "ylennä ylläpitäjäksi",
+    "demote": "alenna jäseneksi",
+    "changeRole": "Vaihda rooli",
+    "changeRoleConfirm": "Oletko varma, että haluat {{action}} käyttäjän {{userName}}?",
+    "roleUpdateSuccess": "Jäsenen rooli päivitetty onnistuneesti",
+    "roleUpdateError": "Jäsenen roolin päivittäminen epäonnistui"
   },
   "profile": {
     "profile": "Profiili",
@@ -123,6 +146,11 @@
     "student": "Oppilas",
     "sensei": "Sensei",
     "club_admin": "Kerhon ylläpitäjä",
-    "guardian": "Huoltaja"
+    "guardian": "Huoltaja",
+    "member": "Jäsen",
+    "admin": "Ylläpitäjä"
+  },
+  "error": {
+    "title": "Virhe"
   }
 }

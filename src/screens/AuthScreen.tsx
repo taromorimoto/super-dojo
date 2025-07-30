@@ -6,136 +6,147 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
+  ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAuthContext } from '../context/AuthContext';
 
 export default function AuthScreen() {
   const { t } = useTranslation();
-  const { signIn, signUp } = useAuthContext();
-  const [email, setEmail] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const { signIn, signUp, isLoading } = useAuthContext();
+
   const [isSignUp, setIsSignUp] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<'student' | 'sensei' | 'club_admin' | 'guardian'>('student');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleAuth = async () => {
-    if (!email.trim()) {
-      Alert.alert(t('common.error'), 'Please enter your email');
+  const handleSubmit = async () => {
+    if (!email.trim() || !password.trim()) {
+      Alert.alert(t('common.error'), 'Please fill in all fields');
       return;
     }
 
-    if (!email.includes('@')) {
-      Alert.alert(t('common.error'), 'Please enter a valid email address');
+    if (isSignUp && !name.trim()) {
+      Alert.alert(t('common.error'), 'Please enter your name');
       return;
     }
 
-    setIsLoading(true);
+    setIsSubmitting(true);
     try {
       if (isSignUp) {
-        await signUp(email.trim().toLowerCase(), selectedRole);
-        Alert.alert('Success', 'User created successfully!');
+        await signUp(email.trim(), password, name.trim());
+        Alert.alert(t('auth.success'), 'Account created successfully!');
       } else {
-        await signIn(email.trim().toLowerCase());
+        await signIn(email.trim(), password);
+        Alert.alert(t('auth.success'), 'Signed in successfully!');
       }
     } catch (error: any) {
-      const errorMessage = error?.message || (isSignUp ? 'Failed to create user. Please try again.' : 'Failed to sign in. Please try again.');
-      Alert.alert(t('common.error'), errorMessage);
+      Alert.alert(
+        t('common.error'),
+        error?.message || `Failed to ${isSignUp ? 'sign up' : 'sign in'}`
+      );
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
+  const toggleMode = () => {
+    setIsSignUp(!isSignUp);
+    setEmail('');
+    setPassword('');
+    setName('');
+  };
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#2E7D32" />
+        <Text style={styles.loadingText}>{t('common.loading')}</Text>
+      </View>
+    );
+  }
+
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <View style={styles.content}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Super dojo</Text>
-          <Text style={styles.subtitle}>Welcome to your martial arts community</Text>
-        </View>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Super Dojo</Text>
+        <Text style={styles.subtitle}>
+          {isSignUp ? 'Create your account' : 'Welcome back'}
+        </Text>
+      </View>
 
-        <View style={styles.form}>
-          <Text style={styles.label}>{t('auth.email')}</Text>
-          <TextInput
-            style={styles.input}
-            placeholder={t('auth.email')}
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-            editable={!isLoading}
-          />
+      <View style={styles.form}>
+        {isSignUp && (
+          <>
+            <Text style={styles.label}>Full Name</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter your full name"
+              value={name}
+              onChangeText={setName}
+              editable={!isSubmitting}
+              autoCapitalize="words"
+            />
+          </>
+        )}
 
-          {isSignUp && (
-            <View style={styles.roleSelection}>
-              <Text style={styles.label}>Select your role:</Text>
-              <View style={styles.roleButtons}>
-                {(['student', 'sensei', 'club_admin', 'guardian'] as const).map((role) => (
-                  <TouchableOpacity
-                    key={role}
-                    style={[
-                      styles.roleButton,
-                      selectedRole === role && styles.roleButtonSelected,
-                    ]}
-                    onPress={() => setSelectedRole(role)}
-                    disabled={isLoading}
-                  >
-                    <Text
-                      style={[
-                        styles.roleButtonText,
-                        selectedRole === role && styles.roleButtonTextSelected,
-                      ]}
-                    >
-                      {role.replace('_', ' ')}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          )}
+        <Text style={styles.label}>{t('auth.email')}</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Enter your email"
+          value={email}
+          onChangeText={setEmail}
+          editable={!isSubmitting}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
 
-          <TouchableOpacity
-            style={[styles.button, isLoading && styles.buttonDisabled]}
-            onPress={handleAuth}
-            disabled={isLoading}
-          >
-            <Text style={styles.buttonText}>
-              {isLoading
-                ? t('common.loading')
-                : isSignUp
-                  ? 'Create Account'
-                  : t('auth.signIn')
-              }
-            </Text>
-          </TouchableOpacity>
+        <Text style={styles.label}>{t('auth.password')}</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Enter your password"
+          value={password}
+          onChangeText={setPassword}
+          editable={!isSubmitting}
+          secureTextEntry
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
 
-          <TouchableOpacity
-            style={styles.switchButton}
-            onPress={() => setIsSignUp(!isSignUp)}
-            disabled={isLoading}
-          >
-            <Text style={styles.switchButtonText}>
-              {isSignUp
-                ? 'Already have an account? Sign In'
-                : "Don't have an account? Sign Up"
-              }
-            </Text>
-          </TouchableOpacity>
-
-          <Text style={styles.helpText}>
-            {isSignUp
-              ? 'Create a new account to join the martial arts community'
-              : 'For demo purposes, enter any email address to sign in'
+        <TouchableOpacity
+          style={[styles.submitButton, isSubmitting && styles.buttonDisabled]}
+          onPress={handleSubmit}
+          disabled={isSubmitting}
+        >
+          <Text style={styles.submitButtonText}>
+            {isSubmitting
+              ? t('common.loading')
+              : isSignUp
+                ? t('auth.createAccount')
+                : t('auth.signIn')
             }
           </Text>
-        </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.toggleButton}
+          onPress={toggleMode}
+          disabled={isSubmitting}
+        >
+          <Text style={styles.toggleButtonText}>
+            {isSignUp
+              ? t('auth.hasAccount')
+              : t('auth.noAccount')
+            }
+          </Text>
+        </TouchableOpacity>
+
+
       </View>
-    </KeyboardAvoidingView>
+    </ScrollView>
   );
 }
 
@@ -144,14 +155,25 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
-  content: {
+  loadingContainer: {
     flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: 24,
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
+  },
+  content: {
+    padding: 24,
+    justifyContent: 'center',
+    minHeight: '100%',
   },
   header: {
     alignItems: 'center',
-    marginBottom: 48,
+    marginBottom: 40,
   },
   title: {
     fontSize: 32,
@@ -160,96 +182,63 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 18,
     color: '#666',
     textAlign: 'center',
   },
   form: {
     backgroundColor: 'white',
     padding: 24,
-    borderRadius: 12,
+    borderRadius: 16,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 4,
     },
     shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowRadius: 8,
+    elevation: 8,
   },
   label: {
     fontSize: 16,
     fontWeight: '600',
     color: '#333',
     marginBottom: 8,
+    marginTop: 16,
   },
   input: {
     borderWidth: 1,
     borderColor: '#ddd',
-    borderRadius: 8,
+    borderRadius: 12,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
     fontSize: 16,
-    marginBottom: 24,
     backgroundColor: '#fff',
   },
-  button: {
+  submitButton: {
     backgroundColor: '#2E7D32',
     paddingVertical: 16,
-    borderRadius: 8,
+    borderRadius: 12,
     alignItems: 'center',
-    marginBottom: 16,
+    marginTop: 24,
   },
   buttonDisabled: {
     backgroundColor: '#ccc',
   },
-  buttonText: {
+  submitButtonText: {
     color: 'white',
     fontSize: 16,
     fontWeight: '600',
   },
-  helpText: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    fontStyle: 'italic',
-  },
-  roleSelection: {
-    marginBottom: 24,
-  },
-  roleButtons: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  roleButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    backgroundColor: '#fff',
-  },
-  roleButtonSelected: {
-    backgroundColor: '#2E7D32',
-    borderColor: '#2E7D32',
-  },
-  roleButtonText: {
-    fontSize: 14,
-    color: '#666',
-    textTransform: 'capitalize',
-  },
-  roleButtonTextSelected: {
-    color: '#fff',
-  },
-  switchButton: {
+  toggleButton: {
+    alignItems: 'center',
     marginTop: 16,
-    marginBottom: 8,
+    paddingVertical: 8,
   },
-  switchButtonText: {
-    fontSize: 14,
+  toggleButtonText: {
     color: '#2E7D32',
-    textAlign: 'center',
-    textDecorationLine: 'underline',
+    fontSize: 14,
+    fontWeight: '500',
   },
+
 });

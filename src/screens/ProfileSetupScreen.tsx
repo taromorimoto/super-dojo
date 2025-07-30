@@ -16,7 +16,7 @@ import { useAuthContext } from '../context/AuthContext';
 
 export default function ProfileSetupScreen() {
   const { t } = useTranslation();
-  const { user, setCurrentUserEmail } = useAuthContext();
+  const { user, isAuthenticated } = useAuthContext();
   const [name, setName] = useState('');
   const [danKyuGrade, setDanKyuGrade] = useState('');
   const [selectedClubId, setSelectedClubId] = useState<string>('');
@@ -26,8 +26,9 @@ export default function ProfileSetupScreen() {
   // Get all clubs
   const clubs = useQuery(api.clubs.getClubs);
 
-  // Mutation for creating profile
+  // Mutations
   const createProfile = useMutation(api.auth.createOrUpdateProfile);
+  const joinClub = useMutation(api.clubs.joinClub);
 
   const handleSubmit = async () => {
     if (!name.trim()) {
@@ -40,11 +41,6 @@ export default function ProfileSetupScreen() {
       return;
     }
 
-    if (!selectedClubId) {
-      Alert.alert(t('common.error'), 'Please select a club');
-      return;
-    }
-
     if (!user) {
       Alert.alert(t('common.error'), 'User not found');
       return;
@@ -52,17 +48,28 @@ export default function ProfileSetupScreen() {
 
     setIsLoading(true);
     try {
+      // Create profile with optional clubId
       await createProfile({
-        userId: user._id as any,
         name: name.trim(),
         danKyuGrade: danKyuGrade.trim(),
-        clubId: selectedClubId as any,
+        clubId: selectedClubId ? (selectedClubId as any) : undefined,
         sport: selectedSport,
       });
 
-      Alert.alert('Success', 'Profile created successfully!');
-      // Refresh user data to include the new profile
-      setCurrentUserEmail(user.email);
+      // If a club was selected, join it as a member
+      if (selectedClubId) {
+        try {
+          await joinClub({ clubId: selectedClubId as any });
+        } catch (clubError: any) {
+          // Don't fail the whole process if club join fails
+          console.warn('Failed to join club:', clubError);
+        }
+      }
+
+            Alert.alert('Success', selectedClubId
+        ? 'Profile created and club joined successfully!'
+        : 'Profile created successfully! You can join clubs later from the Clubs tab.'
+      );
     } catch (error: any) {
       Alert.alert(t('common.error'), error?.message || 'Failed to create profile');
     } finally {
@@ -129,7 +136,36 @@ export default function ProfileSetupScreen() {
           ))}
         </View>
 
-        <Text style={styles.label}>Select Your Club</Text>
+        <Text style={styles.label}>
+          Select Your Club
+          <Text style={styles.optionalText}> (Optional)</Text>
+        </Text>
+        <Text style={styles.helperText}>
+          You can join clubs later from the Clubs tab if you prefer to skip this step.
+        </Text>
+
+        {/* Skip club selection option */}
+        <TouchableOpacity
+          style={[
+            styles.clubButton,
+            !selectedClubId && styles.clubButtonSelected,
+          ]}
+          onPress={() => setSelectedClubId('')}
+          disabled={isLoading}
+        >
+          <Text
+            style={[
+              styles.clubButtonText,
+              !selectedClubId && styles.clubButtonTextSelected,
+            ]}
+          >
+            Skip for now
+          </Text>
+          <Text style={styles.clubLocation}>
+            Join clubs later from the Clubs tab
+          </Text>
+        </TouchableOpacity>
+
         <View style={styles.clubList}>
           {clubs.map((club) => (
             <TouchableOpacity
@@ -220,6 +256,17 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     marginTop: 16,
   },
+  optionalText: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: '#888',
+  },
+  helperText: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 12,
+    fontStyle: 'italic',
+  },
   input: {
     borderWidth: 1,
     borderColor: '#ddd',
@@ -262,6 +309,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ddd',
     backgroundColor: '#fff',
+    marginBottom: 8,
   },
   clubButtonSelected: {
     backgroundColor: '#E8F5E8',

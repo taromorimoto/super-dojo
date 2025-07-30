@@ -1,18 +1,72 @@
 import { mutation } from "./_generated/server";
+import { v } from "convex/values";
+
+// Force clear ALL data - for development emergencies
+export const forceClearAll = mutation({
+  args: {},
+  handler: async (ctx) => {
+    // Get all table names from the schema
+    const tableNames = [
+      "users", "authSessions", "authAccounts", "authVerificationCodes", "authVerifiers",
+      "profiles", "clubs", "clubMemberships", "clubFeed",
+      "events", "attendance", "attendanceQrCodes",
+      "marketplaceListings", "marketplaceMessages", "calendarSyncs"
+    ];
+
+    let totalDeleted = 0;
+
+    for (const tableName of tableNames) {
+      try {
+        // Get all documents in this table
+        const documents = await ctx.db.query(tableName as any).collect();
+        console.log(`Found ${documents.length} documents in ${tableName}`);
+
+        // Delete each document
+        for (const doc of documents) {
+          await ctx.db.delete(doc._id);
+          totalDeleted++;
+        }
+      } catch (error) {
+        console.log(`Could not clear table ${tableName}:`, error);
+      }
+    }
+
+    console.log(`Force cleared database - deleted ${totalDeleted} documents total`);
+    return {
+      message: `Force cleared database - deleted ${totalDeleted} documents total`,
+      tablesCleared: tableNames.length
+    };
+  },
+});
+
+// Clear all existing data (for development only)
+export const clearDatabase = mutation({
+  args: {},
+  handler: async (ctx) => {
+    // Delete all records from all tables
+    const tables = [
+      "users", "authSessions", "authAccounts", "authVerificationCodes", "authVerifiers",
+      "profiles", "clubs", "clubMemberships", "clubFeed",
+      "events", "attendance", "attendanceQrCodes",
+      "marketplaceListings", "marketplaceMessages", "calendarSyncs"
+    ];
+
+    for (const tableName of tables) {
+      const records = await ctx.db.query(tableName as any).collect();
+      await Promise.all(records.map(record => ctx.db.delete(record._id)));
+    }
+
+    console.log("Database cleared successfully");
+    return { message: "Database cleared successfully" };
+  },
+});
 
 export const seedData = mutation({
   args: {},
   handler: async (ctx) => {
-    // Check if data already exists
-    const existingClubs = await ctx.db.query("clubs").collect();
-    if (existingClubs.length > 0) {
-      console.log("Seed data already exists, skipping...");
-      return { message: "Seed data already exists" };
-    }
-
     const now = Date.now();
 
-    // Create sample clubs
+    // Create sample clubs first
     const helsinkiKendoClub = await ctx.db.insert("clubs", {
       name: "Helsinki Kendo Club",
       location: "Helsinki, Finland",
@@ -24,7 +78,7 @@ export const seedData = mutation({
 
     const tampereKendoClub = await ctx.db.insert("clubs", {
       name: "Tampere Martial Arts Dojo",
-      location: "Tampere, Finland", 
+      location: "Tampere, Finland",
       practiceSchedule: "Mondays 19:00-21:00, Wednesdays 18:00-20:00, Saturdays 10:00-12:00",
       sports: ["kendo", "iaido", "jodo"],
       createdAt: now,
@@ -40,49 +94,80 @@ export const seedData = mutation({
       updatedAt: now,
     });
 
-    // Create sample users and profiles
-    const sensei1 = await ctx.db.insert("users", {
-      email: "sensei@helsinkikendo.fi",
-      role: "sensei",
-      createdAt: now,
-      updatedAt: now,
-    });
+    // Create demo user profiles (these will be linked when users sign up with matching emails)
+    // Note: We can't create Convex Auth users via seed, but we can prepare profiles
+    const demoProfiles = [
+      {
+        name: "Takeshi Yamamoto",
+        danKyuGrade: "7 dan",
+        clubId: helsinkiKendoClub,
+        sport: "kendo" as const,
+        userId: "demo-sensei-id", // Will be updated when real user signs up
+        userEmail: "sensei@helsinkikendo.fi",
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        name: "Matti Virtanen",
+        danKyuGrade: "2 kyu",
+        clubId: helsinkiKendoClub,
+        sport: "kendo" as const,
+        userId: "demo-student-id", // Will be updated when real user signs up
+        userEmail: "student@example.com",
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        name: "Anna Korhonen",
+        danKyuGrade: "1 dan",
+        clubId: tampereKendoClub,
+        sport: "iaido" as const,
+        userId: "demo-anna-id", // Will be updated when real user signs up
+        userEmail: "anna@example.com",
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        name: "Kenji Sato",
+        danKyuGrade: "5 dan",
+        clubId: espooBudoClub,
+        sport: "naginata" as const,
+        userId: "demo-admin-id", // Will be updated when real user signs up
+        userEmail: "admin@espoobudo.fi",
+        createdAt: now,
+        updatedAt: now,
+      }
+    ];
 
-    const profile1 = await ctx.db.insert("profiles", {
-      name: "Takeshi Yamamoto",
-      danKyuGrade: "7 dan",
-      clubId: helsinkiKendoClub,
-      sport: "kendo",
-      userId: sensei1,
-      createdAt: now,
-      updatedAt: now,
-    });
+    // Insert demo profiles
+    const profileIds = await Promise.all(
+      demoProfiles.map(profile => ctx.db.insert("profiles", profile))
+    );
 
-    await ctx.db.patch(sensei1, { profileId: profile1 });
+    // Create club memberships for demo accounts
+    const memberships = [
+      { userId: "demo-sensei-id", clubId: helsinkiKendoClub, role: "admin" as const },
+      { userId: "demo-student-id", clubId: helsinkiKendoClub, role: "member" as const },
+      { userId: "demo-anna-id", clubId: tampereKendoClub, role: "admin" as const },
+      { userId: "demo-anna-id", clubId: helsinkiKendoClub, role: "member" as const },
+      { userId: "demo-admin-id", clubId: espooBudoClub, role: "admin" as const },
+    ];
 
-    const student1 = await ctx.db.insert("users", {
-      email: "student@example.com",
-      role: "student",
-      createdAt: now,
-      updatedAt: now,
-    });
-
-    const profile2 = await ctx.db.insert("profiles", {
-      name: "Matti Virtanen",
-      danKyuGrade: "2 kyu",
-      clubId: helsinkiKendoClub,
-      sport: "kendo",
-      userId: student1,
-      createdAt: now,
-      updatedAt: now,
-    });
-
-    await ctx.db.patch(student1, { profileId: profile2 });
+    await Promise.all(
+      memberships.map(membership =>
+        ctx.db.insert("clubMemberships", {
+          ...membership,
+          status: "active" as const,
+          joinedAt: now,
+          updatedAt: now,
+        })
+      )
+    );
 
     // Create sample club feed posts
     await ctx.db.insert("clubFeed", {
       clubId: helsinkiKendoClub,
-      authorId: sensei1,
+      authorId: "demo-sensei-id",
       title: "Next Keiko Theme: Basic Men Strikes",
       content: "This week we will focus on proper men striking technique. Please bring your full bogu and arrive 15 minutes early for warm-up.",
       type: "keiko_theme",
@@ -92,7 +177,7 @@ export const seedData = mutation({
 
     await ctx.db.insert("clubFeed", {
       clubId: helsinkiKendoClub,
-      authorId: sensei1,
+      authorId: "demo-sensei-id",
       title: "Club Tournament Announcement",
       content: "Our annual club tournament will be held on March 15th. Registration is now open. Please see the notice board for details.",
       type: "announcement",
@@ -123,12 +208,18 @@ export const seedData = mutation({
       updatedAt: now,
     });
 
-    console.log("Seed data created successfully");
-    return { 
-      message: "Seed data created successfully",
+    console.log("Seed data created successfully with demo profiles");
+    return {
+      message: "Seed data created successfully with demo profiles",
       clubs: [helsinkiKendoClub, tampereKendoClub, espooBudoClub],
-      users: [sensei1, student1],
-      events: [trainingEvent],
+      profilesCreated: profileIds.length,
+      note: "Demo users will need to sign up with matching emails to link to these profiles",
+      demoEmails: [
+        "sensei@helsinkikendo.fi",
+        "student@example.com",
+        "anna@example.com",
+        "admin@espoobudo.fi"
+      ]
     };
   },
 });

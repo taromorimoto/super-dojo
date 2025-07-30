@@ -2,6 +2,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ConvexProvider, ConvexReactClient } from 'convex/react';
+import { ConvexAuthProvider } from "@convex-dev/auth/react";
 import './src/i18n';
 import AppNavigator from './src/navigation/AppNavigator';
 import { AuthProvider } from './src/context/AuthContext';
@@ -13,11 +14,13 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <ConvexProvider client={convex}>
-        <AuthProvider>
-          <NavigationContainer>
-            <AppNavigator />
-          </NavigationContainer>
-        </AuthProvider>
+        <ConvexAuthProvider client={convex}>
+          <AuthProvider>
+            <NavigationContainer>
+              <AppNavigator />
+            </NavigationContainer>
+          </AuthProvider>
+        </ConvexAuthProvider>
       </ConvexProvider>
     </SafeAreaProvider>
   );

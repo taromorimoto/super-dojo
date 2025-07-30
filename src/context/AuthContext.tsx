@@ -1,24 +1,22 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useQuery, useMutation } from 'convex/react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { createContext, useContext, ReactNode } from 'react';
+import { useQuery } from 'convex/react';
+import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from '../../convex/_generated/api';
 
 interface User {
   _id: string;
   email: string;
-  role: 'student' | 'sensei' | 'club_admin' | 'guardian';
-  profileId?: string;
-  createdAt: number;
-  updatedAt: number;
+  name?: string;
 }
 
 interface Profile {
   _id: string;
   name: string;
   danKyuGrade: string;
-  clubId: string;
+  clubId?: string;
   sport: 'kendo' | 'iaido' | 'jodo' | 'naginata';
   userId: string;
+  userEmail: string;
   createdAt: number;
   updatedAt: number;
 }
@@ -27,11 +25,10 @@ interface AuthContextType {
   user: User | null;
   profile: Profile | null;
   isLoading: boolean;
-  signIn: (email: string) => Promise<void>;
-  signUp: (email: string, role: 'student' | 'sensei' | 'club_admin' | 'guardian') => Promise<void>;
-  signOut: () => void;
-  currentUserEmail: string | null;
-  setCurrentUserEmail: (email: string | null) => void;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, name: string) => Promise<void>;
+  signOut: () => Promise<void>;
+  isAuthenticated: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -49,83 +46,26 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
+  const { signIn: convexSignIn, signOut: convexSignOut } = useAuthActions();
 
-  // Query current user data when email is set
-  const currentUserData = useQuery(
-    api.auth.getCurrentUser as any,
-    currentUserEmail ? { email: currentUserEmail } : "skip"
-  );
+  // Get current user data using the new getCurrentUser function
+  const currentUserData = useQuery(api.auth.getCurrentUser);
 
-  // Mutation for creating new users
-  const createUserMutation = useMutation(api.auth.createUser);
+  const isLoading = currentUserData === undefined;
+  const isAuthenticated = !!currentUserData?.user;
+  const user = currentUserData?.user || null;
+  const profile = currentUserData?.profile || null;
 
-  const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    if (currentUserData !== undefined) {
-      if (currentUserData) {
-        setUser(currentUserData.user);
-        setProfile(currentUserData.profile);
-      } else {
-        setUser(null);
-        setProfile(null);
-      }
-      setIsLoading(false);
-    }
-  }, [currentUserData]);
-
-  useEffect(() => {
-    // Check for stored user session on app start
-    const loadStoredAuth = async () => {
-      try {
-        const storedEmail = await AsyncStorage.getItem('userEmail');
-        if (storedEmail) {
-          setCurrentUserEmail(storedEmail);
-        } else {
-          setIsLoading(false);
-        }
-      } catch (error) {
-        console.error('Error loading stored auth:', error);
-        setIsLoading(false);
-      }
-    };
-
-    loadStoredAuth();
-  }, []);
-
-  const signIn = async (email: string) => {
-    setCurrentUserEmail(email);
-    // Store the email for persistence
-    try {
-      await AsyncStorage.setItem('userEmail', email);
-    } catch (error) {
-      console.error('Error storing user email:', error);
-    }
+  const signIn = async (email: string, password: string) => {
+    await convexSignIn("password", { email, password, flow: "signIn" });
   };
 
-  const signUp = async (email: string, role: 'student' | 'sensei' | 'club_admin' | 'guardian') => {
-    try {
-      await createUserMutation({ email, role });
-      // After creating the user, sign them in
-      setCurrentUserEmail(email);
-      // Store the email for persistence
-      await AsyncStorage.setItem('userEmail', email);
-    } catch (error) {
-      throw error; // Re-throw to let the calling component handle it
-    }
+  const signUp = async (email: string, password: string, name: string) => {
+    await convexSignIn("password", { email, password, name, flow: "signUp" });
   };
 
-  const signOut = () => {
-    setCurrentUserEmail(null);
-    setUser(null);
-    setProfile(null);
-    // Remove stored email
-    AsyncStorage.removeItem('userEmail').catch(error => {
-      console.error('Error removing stored user email:', error);
-    });
+  const signOut = async () => {
+    await convexSignOut();
   };
 
   const value: AuthContextType = {
@@ -135,8 +75,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     signIn,
     signUp,
     signOut,
-    currentUserEmail,
-    setCurrentUserEmail,
+    isAuthenticated,
   };
 
   return (

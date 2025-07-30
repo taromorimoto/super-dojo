@@ -17,6 +17,7 @@ import type * as attendance from "../attendance.js";
 import type * as auth from "../auth.js";
 import type * as clubFeed from "../clubFeed.js";
 import type * as clubs from "../clubs.js";
+import type * as http from "../http.js";
 import type * as seed from "../seed.js";
 
 /**
@@ -32,6 +33,7 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   clubFeed: typeof clubFeed;
   clubs: typeof clubs;
+  http: typeof http;
   seed: typeof seed;
 }>;
 export declare const api: FilterApi<
