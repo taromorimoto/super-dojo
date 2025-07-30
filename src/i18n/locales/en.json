@@ -77,7 +77,18 @@
     "sport": "Sport",
     "createProfile": "Create Profile",
     "editProfile": "Edit Profile",
-    "noProfile": "No profile created yet"
+    "noProfile": "No profile created yet",
+    "profileInformation": "Profile Information",
+    "clubInformation": "Club Information",
+    "primaryClub": "Primary Club",
+    "removePrimary": "Remove Primary",
+    "noPrimaryClub": "No primary club set",
+    "memberOfClubs": "Member of Clubs",
+    "setAsPrimary": "Set as Primary",
+    "signOutConfirm": "Are you sure you want to sign out?",
+    "profileUpdated": "Profile updated successfully",
+    "failedToUpdate": "Failed to update profile",
+    "failedToChangeClub": "Failed to change primary club"
   },
   "events": {
     "events": "Events",
