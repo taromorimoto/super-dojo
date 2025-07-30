@@ -68,7 +68,8 @@
     "changeRole": "Change Role",
     "changeRoleConfirm": "Are you sure you want to {{action}} {{userName}}?",
     "roleUpdateSuccess": "Member role updated successfully",
-    "roleUpdateError": "Failed to update member role"
+    "roleUpdateError": "Failed to update member role",
+    "alreadyMember": "You are already a member of this club"
   },
   "profile": {
     "profile": "Profile",

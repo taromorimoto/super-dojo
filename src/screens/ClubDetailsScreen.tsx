@@ -63,6 +63,18 @@ export default function ClubDetailsScreen() {
       return;
     }
 
+    // Wait for membership data to load before checking
+    if (userMembership === undefined) {
+      Alert.alert(t('error.title'), t('common.loading'));
+      return;
+    }
+
+    // Check if already a member before attempting to join
+    if (isMember) {
+      Alert.alert(t('error.title'), t('club.alreadyMember'));
+      return;
+    }
+
     setIsLoading(true);
     try {
       await joinClub({ clubId: clubId as any });
@@ -210,6 +222,10 @@ export default function ClubDetailsScreen() {
     );
   }
 
+  console.log(club);
+  console.log(userMembership);
+  console.log(isMember);
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
@@ -248,7 +264,14 @@ export default function ClubDetailsScreen() {
         {/* Membership Actions */}
         {user && (
           <View style={styles.membershipActions}>
-            {!isMember ? (
+            {userMembership === undefined || isLoading ? (
+              <TouchableOpacity
+                style={[styles.actionButton, styles.joinButton, { opacity: 0.7 }]}
+                disabled={true}
+              >
+                <Text style={styles.actionButtonText}>{t('common.loading')}</Text>
+              </TouchableOpacity>
+            ) : !isMember ? (
               <TouchableOpacity
                 style={[styles.actionButton, styles.joinButton]}
                 onPress={handleJoinClub}

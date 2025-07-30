@@ -2,6 +2,7 @@ import React, { createContext, useContext, ReactNode } from 'react';
 import { useQuery } from 'convex/react';
 import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from '../../convex/_generated/api';
+import { Doc } from '../../convex/_generated/dataModel';
 
 interface User {
   _id: string;
@@ -9,17 +10,7 @@ interface User {
   name?: string;
 }
 
-interface Profile {
-  _id: string;
-  name: string;
-  danKyuGrade: string;
-  clubId?: string;
-  sport: 'kendo' | 'iaido' | 'jodo' | 'naginata';
-  userId: string;
-  userEmail: string;
-  createdAt: number;
-  updatedAt: number;
-}
+type Profile = Doc<"profiles">;
 
 interface AuthContextType {
   user: User | null;

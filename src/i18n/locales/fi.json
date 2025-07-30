@@ -68,7 +68,8 @@
     "changeRole": "Vaihda rooli",
     "changeRoleConfirm": "Oletko varma, että haluat {{action}} käyttäjän {{userName}}?",
     "roleUpdateSuccess": "Jäsenen rooli päivitetty onnistuneesti",
-    "roleUpdateError": "Jäsenen roolin päivittäminen epäonnistui"
+    "roleUpdateError": "Jäsenen roolin päivittäminen epäonnistui",
+    "alreadyMember": "Olet jo tämän kerhon jäsen"
   },
   "profile": {
     "profile": "Profiili",

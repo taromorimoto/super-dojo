@@ -49,6 +49,19 @@ export default function ClubsScreen() {
       return;
     }
 
+    // Wait for memberships to load before checking
+    if (userMemberships === undefined) {
+      Alert.alert(t('error.title'), t('common.loading'));
+      return;
+    }
+
+    // Check if already a member before attempting to join
+    const isAlreadyMember = isMemberOfClub(clubId);
+    if (isAlreadyMember) {
+      Alert.alert(t('error.title'), t('club.alreadyMember'));
+      return;
+    }
+
     setLoadingClubIds(prev => new Set([...prev, clubId]));
 
     try {
@@ -100,6 +113,7 @@ export default function ClubsScreen() {
   const renderClubCard = ({ item: club }: { item: Club }) => {
     const isMember = isMemberOfClub(club._id);
     const isLoading = loadingClubIds.has(club._id);
+    const membershipDataLoading = userMemberships === undefined;
 
     return (
       <Link href={`/(tabs)/clubs/${club._id}`} asChild>
@@ -136,16 +150,16 @@ export default function ClubsScreen() {
               style={[
                 styles.actionButton,
                 isMember ? styles.leaveButton : styles.joinButton,
-                isLoading && styles.disabledButton
+                (isLoading || membershipDataLoading) && styles.disabledButton
               ]}
               onPress={() =>
                 isMember
                   ? handleLeaveClub(club._id, club.name)
                   : handleJoinClub(club._id, club.name)
               }
-              disabled={isLoading}
+              disabled={isLoading || membershipDataLoading}
             >
-              {isLoading ? (
+              {isLoading || membershipDataLoading ? (
                 <Text style={styles.actionButtonText}>{t('common.loading')}</Text>
               ) : (
                 <>

@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
+import { Id } from '../../convex/_generated/dataModel';
 import { useAuthContext } from '../context/AuthContext';
 
 interface EditableField {
@@ -79,7 +80,7 @@ export default function ProfileScreen() {
     }
   };
 
-  const handleChangePrimaryClub = async (clubId: string | undefined) => {
+  const handleChangePrimaryClub = async (clubId: Id<"clubs"> | undefined) => {
     try {
       setIsLoading(true);
       await setPrimaryClub({ clubId });
@@ -214,7 +215,7 @@ export default function ProfileScreen() {
       {/* Profile Information */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>{t('profile.profileInformation')}</Text>
-        
+
         {renderEditableField(t('profile.name'), profile.name, 'name')}
         {renderEditableField(t('profile.danKyuGrade'), profile.danKyuGrade, 'danKyuGrade')}
         {renderEditableField(t('profile.sport'), profile.sport, 'sport', true)}
@@ -223,7 +224,7 @@ export default function ProfileScreen() {
       {/* Club Information */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>{t('profile.clubInformation')}</Text>
-        
+
         {profile.clubId && allClubs ? (
           <View style={styles.clubContainer}>
             <Text style={styles.fieldLabel}>{t('profile.primaryClub')}</Text>
@@ -249,7 +250,7 @@ export default function ProfileScreen() {
             {userMemberships.map((membershipData) => {
               const club = membershipData.club;
               if (!club) return null;
-              
+
               return (
                 <View key={membershipData._id} style={styles.memberClubItem}>
                   <Text style={styles.memberClubName}>{club.name}</Text>
