@@ -15,7 +15,7 @@ import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthContext } from '../context/AuthContext';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, router } from 'expo-router';
 import { Id } from '../../convex/_generated/dataModel';
 import ConfirmModal from '../components/ConfirmModal';
 
@@ -26,6 +26,7 @@ export default function ClubDetailsScreen() {
 
   const club = useQuery(api.clubs.getClub, { id: clubId as any });
   const clubMembers = useQuery(api.clubs.getClubMembersWithRoles, { clubId: clubId as any });
+  const clubEvents = useQuery(api.events.getClubEvents, { clubId: clubId as any });
   const userMembership = useQuery(api.clubs.isUserMemberOfClub,
     user ? { userId: user._id as Id<"users">, clubId: clubId as any } : "skip"
   );
@@ -34,6 +35,8 @@ export default function ClubDetailsScreen() {
   const leaveClub = useMutation(api.clubs.leaveClub);
   const updateClub = useMutation(api.clubs.updateClub);
   const updateMemberRole = useMutation(api.clubs.updateMemberRole);
+  const attendEvent = useMutation(api.events.attendEvent);
+  const removeAttendance = useMutation(api.events.removeAttendance);
 
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -160,6 +163,111 @@ export default function ClubDetailsScreen() {
     }));
   };
 
+  const handleAttendEvent = async (eventId: string) => {
+    if (!user) {
+      Alert.alert(t('auth.required'), t('auth.loginToAttend'));
+      return;
+    }
+
+    try {
+      await attendEvent({ eventId: eventId as any });
+      Alert.alert(t('events.attendSuccess'), t('events.attendSuccessMessage'));
+    } catch (error: any) {
+      Alert.alert(t('error.title'), error.message || t('events.attendError'));
+    }
+  };
+
+  const handleRemoveAttendance = async (eventId: string) => {
+    try {
+      await removeAttendance({ eventId: eventId as any });
+      Alert.alert(t('events.removeAttendanceSuccess'), t('events.removeAttendanceSuccessMessage'));
+    } catch (error: any) {
+      Alert.alert(t('error.title'), error.message || t('events.removeAttendanceError'));
+    }
+  };
+
+  const formatEventDate = (timestamp: number) => {
+    const date = new Date(timestamp);
+    return date.toLocaleDateString('fi-FI', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const formatEventType = (type: string) => {
+    const typeMap = {
+      training: t('events.types.training'),
+      competition: t('events.types.competition'),
+      seminar: t('events.types.seminar'),
+      grading: t('events.types.grading'),
+    };
+    return typeMap[type as keyof typeof typeMap] || type;
+  };
+
+  const renderEventItem = ({ item }: any) => {
+    const event = item;
+    const isUpcoming = event.startTime > Date.now();
+    const isPast = event.startTime < Date.now();
+
+    return (
+      <View style={styles.eventItem}>
+        <View style={styles.eventHeader}>
+          <Text style={styles.eventTitle}>{event.title}</Text>
+          <View style={[styles.eventTypeTag, isPast && styles.pastEventTypeTag]}>
+            <Text style={[styles.eventTypeText, isPast && styles.pastEventTypeText]}>
+              {formatEventType(event.type)}
+            </Text>
+          </View>
+        </View>
+        
+        <View style={styles.eventDetails}>
+          <View style={styles.eventDetailRow}>
+            <Ionicons name="calendar-outline" size={16} color="#666" />
+            <Text style={styles.eventDetailText}>
+              {formatEventDate(event.startTime)}
+              {event.endTime && event.endTime !== event.startTime && 
+                ` - ${formatEventDate(event.endTime)}`
+              }
+            </Text>
+          </View>
+          
+          {event.location && (
+            <View style={styles.eventDetailRow}>
+              <Ionicons name="location-outline" size={16} color="#666" />
+              <Text style={styles.eventDetailText}>{event.location}</Text>
+            </View>
+          )}
+          
+          <View style={styles.eventDetailRow}>
+            <Ionicons name="people-outline" size={16} color="#666" />
+            <Text style={styles.eventDetailText}>
+              {event.attendeeCount} {t('events.attendees')}
+            </Text>
+          </View>
+        </View>
+
+        {event.description && (
+          <Text style={styles.eventDescription}>{event.description}</Text>
+        )}
+
+        {isMember && isUpcoming && (
+          <View style={styles.eventActions}>
+            <TouchableOpacity
+              style={[styles.attendButton]}
+              onPress={() => handleAttendEvent(event._id)}
+            >
+              <Ionicons name="checkmark-outline" size={16} color="white" />
+              <Text style={styles.attendButtonText}>{t('events.attend')}</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+    );
+  };
+
   const renderMemberItem = ({ item }: any) => {
     const { membership, user: memberUser, profile } = item;
 
@@ -222,12 +330,20 @@ export default function ClubDetailsScreen() {
         <View style={styles.headerContent}>
           <Text style={styles.clubName}>{club.name}</Text>
           {isAdmin && (
-            <TouchableOpacity
-              style={styles.editButton}
-              onPress={() => setIsEditing(true)}
-            >
-              <Ionicons name="create-outline" size={24} color="#666" />
-            </TouchableOpacity>
+            <View style={styles.adminActions}>
+              <TouchableOpacity
+                style={styles.settingsButton}
+                onPress={() => router.push(`/clubs/${clubId}/settings`)}
+              >
+                <Ionicons name="settings-outline" size={20} color="#666" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.editButton}
+                onPress={() => setIsEditing(true)}
+              >
+                <Ionicons name="create-outline" size={20} color="#666" />
+              </TouchableOpacity>
+            </View>
           )}
         </View>
 
@@ -283,6 +399,25 @@ export default function ClubDetailsScreen() {
           </View>
         )}
       </View>
+
+      {/* Events Section */}
+      {clubEvents && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>
+            {t('events.events')} ({clubEvents.length})
+          </Text>
+          {clubEvents.length > 0 ? (
+            <FlatList
+              data={clubEvents}
+              renderItem={renderEventItem}
+              keyExtractor={(item) => item._id}
+              scrollEnabled={false}
+            />
+          ) : (
+            <Text style={styles.emptyText}>{t('events.noEvents')}</Text>
+          )}
+        </View>
+      )}
 
       {/* Members Section */}
       {isMember && clubMembers && (
@@ -424,6 +559,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
     flex: 1,
+  },
+  adminActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  settingsButton: {
+    padding: 8,
   },
   editButton: {
     padding: 8,
@@ -619,5 +761,83 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: '600',
   },
-
+  emptyText: {
+    fontSize: 16,
+    color: '#999',
+    textAlign: 'center',
+    fontStyle: 'italic',
+    paddingVertical: 20,
+  },
+  eventItem: {
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  eventHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  eventTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    flex: 1,
+    marginRight: 8,
+  },
+  eventTypeTag: {
+    backgroundColor: '#E3F2FD',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  pastEventTypeTag: {
+    backgroundColor: '#f5f5f5',
+  },
+  eventTypeText: {
+    fontSize: 12,
+    color: '#1976D2',
+    fontWeight: '500',
+  },
+  pastEventTypeText: {
+    color: '#999',
+  },
+  eventDetails: {
+    gap: 4,
+    marginBottom: 8,
+  },
+  eventDetailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  eventDetailText: {
+    fontSize: 14,
+    color: '#666',
+  },
+  eventDescription: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 12,
+    lineHeight: 20,
+  },
+  eventActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  attendButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#4CAF50',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    gap: 4,
+  },
+  attendButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+  },
 });
