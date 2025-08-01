@@ -13,7 +13,9 @@
     "yes": "Yes",
     "no": "No",
     "hello": "Hello",
-    "success": "Success"
+    "success": "Success",
+    "today": "Today",
+    "tomorrow": "Tomorrow"
   },
   "auth": {
     "signIn": "Sign In",
@@ -112,7 +114,20 @@
     "seminar": "Seminar",
     "grading": "Grading",
     "noEvents": "No events found",
-    "attendEvent": "Attend Event"
+    "attendEvent": "Attend Event",
+    "attend": "Attend",
+    "attendees": "attendees",
+    "attendSuccess": "Successfully registered for event",
+    "attendSuccessMessage": "You have been registered for this event",
+    "attendError": "Failed to register for event",
+    "types": {
+      "training": "Training",
+      "competition": "Competition",
+      "seminar": "Seminar",
+      "grading": "Grading"
+    },
+    "upcomingEvents": "Upcoming Events",
+    "noUpcomingEvents": "No upcoming events"
   },
   "attendance": {
     "attendance": "Attendance",

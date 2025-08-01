@@ -13,7 +13,9 @@
     "yes": "Kyllä",
     "no": "Ei",
     "hello": "Hei",
-    "success": "Onnistui"
+    "success": "Onnistui",
+    "today": "Tänään",
+    "tomorrow": "Huomenna"
   },
   "auth": {
     "signIn": "Kirjaudu sisään",
@@ -112,7 +114,20 @@
     "seminar": "Seminaari",
     "grading": "Arviointi",
     "noEvents": "Tapahtumia ei löytynyt",
-    "attendEvent": "Osallistu tapahtumaan"
+    "attendEvent": "Osallistu tapahtumaan",
+    "attend": "Osallistu",
+    "attendees": "osallistujaa",
+    "attendSuccess": "Ilmoittautuminen tapahtumaan onnistui",
+    "attendSuccessMessage": "Sinut on ilmoitettu tähän tapahtumaan",
+    "attendError": "Tapahtumaan ilmoittautuminen epäonnistui",
+    "types": {
+      "training": "Harjoitus",
+      "competition": "Kilpailu",
+      "seminar": "Seminaari",
+      "grading": "Arviointi"
+    },
+    "upcomingEvents": "Tulevat tapahtumat",
+    "noUpcomingEvents": "Ei tulevia tapahtumia"
   },
   "attendance": {
     "attendance": "Läsnäolo",

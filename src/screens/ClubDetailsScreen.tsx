@@ -18,6 +18,7 @@ import { useAuthContext } from '../context/AuthContext';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Id } from '../../convex/_generated/dataModel';
 import ConfirmModal from '../components/ConfirmModal';
+import EventItem from '../components/EventItem';
 
 export default function ClubDetailsScreen() {
   const { t } = useTranslation();
@@ -186,87 +187,13 @@ export default function ClubDetailsScreen() {
     }
   };
 
-  const formatEventDate = (timestamp: number) => {
-    const date = new Date(timestamp);
-    return date.toLocaleDateString('fi-FI', {
-      weekday: 'short',
-      day: 'numeric',
-      month: 'short',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  const formatEventType = (type: string) => {
-    const typeMap = {
-      training: t('events.types.training'),
-      competition: t('events.types.competition'),
-      seminar: t('events.types.seminar'),
-      grading: t('events.types.grading'),
-    };
-    return typeMap[type as keyof typeof typeMap] || type;
-  };
-
-  const renderEventItem = ({ item }: any) => {
-    const event = item;
-    const isUpcoming = event.startTime > Date.now();
-    const isPast = event.startTime < Date.now();
-
-    return (
-      <View style={styles.eventItem}>
-        <View style={styles.eventHeader}>
-          <Text style={styles.eventTitle}>{event.title}</Text>
-          <View style={[styles.eventTypeTag, isPast && styles.pastEventTypeTag]}>
-            <Text style={[styles.eventTypeText, isPast && styles.pastEventTypeText]}>
-              {formatEventType(event.type)}
-            </Text>
-          </View>
-        </View>
-        
-        <View style={styles.eventDetails}>
-          <View style={styles.eventDetailRow}>
-            <Ionicons name="calendar-outline" size={16} color="#666" />
-            <Text style={styles.eventDetailText}>
-              {formatEventDate(event.startTime)}
-              {event.endTime && event.endTime !== event.startTime && 
-                ` - ${formatEventDate(event.endTime)}`
-              }
-            </Text>
-          </View>
-          
-          {event.location && (
-            <View style={styles.eventDetailRow}>
-              <Ionicons name="location-outline" size={16} color="#666" />
-              <Text style={styles.eventDetailText}>{event.location}</Text>
-            </View>
-          )}
-          
-          <View style={styles.eventDetailRow}>
-            <Ionicons name="people-outline" size={16} color="#666" />
-            <Text style={styles.eventDetailText}>
-              {event.attendeeCount} {t('events.attendees')}
-            </Text>
-          </View>
-        </View>
-
-        {event.description && (
-          <Text style={styles.eventDescription}>{event.description}</Text>
-        )}
-
-        {isMember && isUpcoming && (
-          <View style={styles.eventActions}>
-            <TouchableOpacity
-              style={[styles.attendButton]}
-              onPress={() => handleAttendEvent(event._id)}
-            >
-              <Ionicons name="checkmark-outline" size={16} color="white" />
-              <Text style={styles.attendButtonText}>{t('events.attend')}</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
-    );
-  };
+  const renderEventItem = ({ item }: any) => (
+    <EventItem
+      event={item}
+      isMember={isMember}
+      onAttend={handleAttendEvent}
+    />
+  );
 
   const renderMemberItem = ({ item }: any) => {
     const { membership, user: memberUser, profile } = item;
@@ -404,11 +331,14 @@ export default function ClubDetailsScreen() {
       {clubEvents && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            {t('events.events')} ({clubEvents.length})
+            {t('events.events')} ({clubEvents.filter(event => event.startTime > Date.now()).length})
           </Text>
-          {clubEvents.length > 0 ? (
+          {clubEvents.filter(event => event.startTime > Date.now()).length > 0 ? (
             <FlatList
-              data={clubEvents}
+              data={clubEvents
+                .filter(event => event.startTime > Date.now())
+                .sort((a, b) => a.startTime - b.startTime)
+              }
               renderItem={renderEventItem}
               keyExtractor={(item) => item._id}
               scrollEnabled={false}
@@ -768,76 +698,5 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     paddingVertical: 20,
   },
-  eventItem: {
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  eventHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 8,
-  },
-  eventTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    flex: 1,
-    marginRight: 8,
-  },
-  eventTypeTag: {
-    backgroundColor: '#E3F2FD',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  pastEventTypeTag: {
-    backgroundColor: '#f5f5f5',
-  },
-  eventTypeText: {
-    fontSize: 12,
-    color: '#1976D2',
-    fontWeight: '500',
-  },
-  pastEventTypeText: {
-    color: '#999',
-  },
-  eventDetails: {
-    gap: 4,
-    marginBottom: 8,
-  },
-  eventDetailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  eventDetailText: {
-    fontSize: 14,
-    color: '#666',
-  },
-  eventDescription: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 12,
-    lineHeight: 20,
-  },
-  eventActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  attendButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#4CAF50',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    gap: 4,
-  },
-  attendButtonText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: '600',
-  },
+
 });

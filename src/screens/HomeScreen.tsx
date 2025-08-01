@@ -13,6 +13,7 @@ import { useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Ionicons } from '@expo/vector-icons';
 import { Id } from '../../convex/_generated/dataModel';
+import EventItem from '../components/EventItem';
 
 export default function HomeScreen() {
   const { t } = useTranslation();
@@ -50,73 +51,11 @@ export default function HomeScreen() {
     },
   ];
 
-  const formatEventDate = (timestamp: number) => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const tomorrow = new Date(now);
-    tomorrow.setDate(now.getDate() + 1);
-
-    // Check if it's today
-    if (date.toDateString() === now.toDateString()) {
-      return `${t('common.today')} ${date.toLocaleTimeString('fi-FI', {
-        hour: '2-digit',
-        minute: '2-digit'
-      })}`;
-    }
-
-    // Check if it's tomorrow
-    if (date.toDateString() === tomorrow.toDateString()) {
-      return `${t('common.tomorrow')} ${date.toLocaleTimeString('fi-FI', {
-        hour: '2-digit',
-        minute: '2-digit'
-      })}`;
-    }
-
-    // Otherwise show full date
-    return date.toLocaleDateString('fi-FI', {
-      weekday: 'short',
-      day: 'numeric',
-      month: 'short',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  const renderEventItem = ({ item }: any) => {
-    const event = item;
-    
-    return (
-      <TouchableOpacity style={styles.eventItem}>
-        <View style={styles.eventHeader}>
-          <Text style={styles.eventTitle}>{event.title}</Text>
-          <Text style={styles.eventClub}>{event.club?.name}</Text>
-        </View>
-        
-        <View style={styles.eventDetails}>
-          <View style={styles.eventDetailRow}>
-            <Ionicons name="calendar-outline" size={14} color="#666" />
-            <Text style={styles.eventDetailText}>
-              {formatEventDate(event.startTime)}
-            </Text>
-          </View>
-          
-          {event.location && (
-            <View style={styles.eventDetailRow}>
-              <Ionicons name="location-outline" size={14} color="#666" />
-              <Text style={styles.eventDetailText}>{event.location}</Text>
-            </View>
-          )}
-
-          <View style={styles.eventDetailRow}>
-            <Ionicons name="people-outline" size={14} color="#666" />
-            <Text style={styles.eventDetailText}>
-              {event.attendeeCount} {t('events.attendees')}
-            </Text>
-          </View>
-        </View>
-      </TouchableOpacity>
-    );
-  };
+  const renderEventItem = ({ item }: any) => (
+    <TouchableOpacity>
+      <EventItem event={item} showClub={true} />
+    </TouchableOpacity>
+  );
 
   return (
     <ScrollView style={styles.container}>
@@ -306,44 +245,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
     elevation: 5,
-  },
-  eventItem: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  eventHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 8,
-  },
-  eventTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    flex: 1,
-    marginRight: 8,
-  },
-  eventClub: {
-    fontSize: 12,
-    color: '#666',
-    backgroundColor: '#f5f5f5',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  eventDetails: {
-    gap: 4,
-  },
-  eventDetailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  eventDetailText: {
-    fontSize: 12,
-    color: '#666',
   },
   activityCard: {
     backgroundColor: 'white',
