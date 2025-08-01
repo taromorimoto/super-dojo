@@ -26,22 +26,29 @@ export default function ClubSettingsScreen() {
 
   const club = useQuery(api.clubs.getClub, { id: clubId as any });
   const calendarSyncs = useQuery(api.calendarSync.getClubCalendarSyncs, { clubId: clubId as any });
+  const clubSyncStatuses = useQuery(api.calendarSync.getClubSyncStatuses, { clubId: clubId as any });
+  const recentSyncActivity = useQuery(api.calendarSync.getRecentSyncActivity, { limit: 10 });
   const userMembership = useQuery(api.clubs.isUserMemberOfClub,
     user ? { userId: user._id as Id<"users">, clubId: clubId as any } : "skip"
   );
 
-  const addCalendarSync = useMutation(api.calendarSync.addCalendarSync);
-  const updateCalendarSync = useMutation(api.calendarSync.updateCalendarSync);
-  const deleteCalendarSync = useMutation(api.calendarSync.deleteCalendarSync);
-  const syncCalendarEvents = useAction(api.calendarSync.syncCalendarEvents);
-
-  const [isAddingCalendar, setIsAddingCalendar] = useState(false);
+    const [isAddingCalendar, setIsAddingCalendar] = useState(false);
   const [editingCalendar, setEditingCalendar] = useState<any>(null);
   const [calendarForm, setCalendarForm] = useState({
     name: '',
     icsUrl: '',
   });
-  const [isLoading, setIsLoading] = useState(false);
+  const [syncingCalendarId, setSyncingCalendarId] = useState<string | null>(null); // Store calendar ID when syncing
+  const [isSavingCalendar, setIsSavingCalendar] = useState(false); // Loading state for saving calendar forms
+  const [showSyncHistory, setShowSyncHistory] = useState(false); // Toggle sync history section
+
+  const addCalendarSync = useMutation(api.calendarSync.addCalendarSync);
+  const updateCalendarSync = useMutation(api.calendarSync.updateCalendarSync);
+  const deleteCalendarSync = useMutation(api.calendarSync.deleteCalendarSync);
+  const syncCalendarEvents = useAction(api.calendarSync.syncCalendarEvents);
+  const getSyncStatus = useQuery(api.calendarSync.getSyncStatus,
+    syncingCalendarId ? { calendarSyncId: syncingCalendarId as any } : "skip"
+  );
 
   const isAdmin = userMembership?.role === 'admin';
 
@@ -75,7 +82,7 @@ export default function ClubSettingsScreen() {
       return;
     }
 
-    setIsLoading(true);
+    setIsSavingCalendar(true);
     try {
       if (editingCalendar) {
         await updateCalendarSync({
@@ -96,7 +103,7 @@ export default function ClubSettingsScreen() {
     } catch (error: any) {
       Alert.alert(t('error.title'), error.message || t('calendarSync.saveError'));
     } finally {
-      setIsLoading(false);
+      setIsSavingCalendar(false);
     }
   };
 
@@ -135,24 +142,43 @@ export default function ClubSettingsScreen() {
     }
   };
 
-  const handleSyncNow = async (calendar: any) => {
-    setIsLoading(true);
+    const handleSyncNow = async (calendar: any) => {
+    setSyncingCalendarId(calendar._id);
     try {
-      const result = await syncCalendarEvents({ calendarSyncId: calendar._id });
-      Alert.alert(
-        t('calendarSync.syncSuccess'),
-        t('calendarSync.syncSuccessMessage', { count: result.eventsProcessed })
-      );
+      // Start sync without awaiting (let polling handle progress)
+      syncCalendarEvents({ calendarSyncId: calendar._id });
     } catch (error: any) {
       Alert.alert(t('error.title'), error.message || t('calendarSync.syncError'));
-    } finally {
-      setIsLoading(false);
+      setSyncingCalendarId(null);
     }
   };
 
-  const formatLastSync = (timestamp?: number) => {
+  // Stop polling when sync is complete
+  React.useEffect(() => {
+    if (getSyncStatus && !getSyncStatus.isCurrentlyRunning && syncingCalendarId) {
+      const wasSuccessful = getSyncStatus.lastSyncStatus === 'success';
+      const progress = getSyncStatus.syncProgress;
+
+      if (wasSuccessful && progress) {
+        Alert.alert(
+          t('calendarSync.syncSuccess'),
+          t('calendarSync.syncSuccessMessage', {
+            count: progress.processedEvents,
+            created: progress.createdEvents,
+            updated: progress.updatedEvents
+          })
+        );
+      } else if (getSyncStatus.lastSyncStatus === 'error') {
+        Alert.alert(t('error.title'), getSyncStatus.lastSyncError || t('calendarSync.syncError'));
+      }
+
+      setSyncingCalendarId(null);
+    }
+  }, [getSyncStatus?.isCurrentlyRunning, getSyncStatus?.lastSyncStatus]);
+
+    const formatLastSync = (timestamp?: number) => {
     if (!timestamp) return t('calendarSync.neverSynced');
-    
+
     const date = new Date(timestamp);
     return date.toLocaleString('fi-FI', {
       day: 'numeric',
@@ -162,9 +188,48 @@ export default function ClubSettingsScreen() {
     });
   };
 
+  const formatSyncDuration = (durationMs?: number) => {
+    if (!durationMs) return '-';
+
+    if (durationMs < 1000) {
+      return `${durationMs}ms`;
+    } else if (durationMs < 60000) {
+      return `${(durationMs / 1000).toFixed(1)}s`;
+    } else {
+      return `${Math.round(durationMs / 60000)}m ${Math.round((durationMs % 60000) / 1000)}s`;
+    }
+  };
+
+  const formatSyncProgress = (progress: any) => {
+    if (!progress) return '-';
+
+    const { processedEvents, createdEvents, updatedEvents, errorEvents } = progress;
+    let summary = `${processedEvents} events`;
+
+    if (createdEvents > 0 || updatedEvents > 0 || errorEvents > 0) {
+      const parts = [];
+      if (createdEvents > 0) parts.push(`${createdEvents} created`);
+      if (updatedEvents > 0) parts.push(`${updatedEvents} updated`);
+      if (errorEvents > 0) parts.push(`${errorEvents} errors`);
+      summary += ` (${parts.join(', ')})`;
+    }
+
+    return summary;
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'success': return '✅';
+      case 'error': return '❌';
+      case 'running': return '🔄';
+      case 'cancelled': return '⏹️';
+      default: return '⚪';
+    }
+  };
+
   const renderCalendarItem = ({ item }: any) => {
     const calendar = item;
-    
+
     return (
       <View style={styles.calendarItem}>
         <View style={styles.calendarHeader}>
@@ -172,7 +237,7 @@ export default function ClubSettingsScreen() {
             <Text style={styles.calendarName}>{calendar.name}</Text>
             <Text style={styles.calendarUrl} numberOfLines={1}>{calendar.icsUrl}</Text>
           </View>
-          
+
           <Switch
             value={calendar.isActive}
             onValueChange={() => handleToggleActive(calendar)}
@@ -192,15 +257,80 @@ export default function ClubSettingsScreen() {
           )}
         </View>
 
+        {/* Real-time Sync Progress */}
+        {syncingCalendarId === calendar._id && getSyncStatus?.isCurrentlyRunning && getSyncStatus?.syncProgress && (
+          <View style={styles.progressContainer}>
+            <View style={styles.progressHeader}>
+              <Text style={styles.progressPhase}>
+                {getSyncStatus.syncProgress.phase === 'fetching' && '🔄 Fetching calendar...'}
+                {getSyncStatus.syncProgress.phase === 'parsing' && '📖 Parsing events...'}
+                {getSyncStatus.syncProgress.phase === 'processing' && '⚙️ Processing events...'}
+                {getSyncStatus.syncProgress.phase === 'cleanup' && '🧹 Cleaning up...'}
+                {getSyncStatus.syncProgress.phase === 'completed' && '✅ Completed'}
+              </Text>
+              <Text style={styles.progressPercent}>
+                {getSyncStatus.syncProgress.totalEvents > 0
+                  ? Math.round((getSyncStatus.syncProgress.processedEvents / getSyncStatus.syncProgress.totalEvents) * 100)
+                  : 0}%
+              </Text>
+            </View>
+
+            {getSyncStatus.syncProgress.totalEvents > 0 && (
+              <View style={styles.progressBar}>
+                <View
+                  style={[
+                    styles.progressFill,
+                    { width: `${(getSyncStatus.syncProgress.processedEvents / getSyncStatus.syncProgress.totalEvents) * 100}%` }
+                  ]}
+                />
+              </View>
+            )}
+
+            <View style={styles.progressStats}>
+              <Text style={styles.progressStat}>
+                📊 {getSyncStatus.syncProgress.processedEvents}/{getSyncStatus.syncProgress.totalEvents} events
+              </Text>
+              {getSyncStatus.syncProgress.createdEvents > 0 && (
+                <Text style={styles.progressStat}>
+                  ➕ {getSyncStatus.syncProgress.createdEvents} created
+                </Text>
+              )}
+              {getSyncStatus.syncProgress.updatedEvents > 0 && (
+                <Text style={styles.progressStat}>
+                  ✏️ {getSyncStatus.syncProgress.updatedEvents} updated
+                </Text>
+              )}
+              {getSyncStatus.syncProgress.errorEvents > 0 && (
+                <Text style={styles.progressStat}>
+                  ❌ {getSyncStatus.syncProgress.errorEvents} errors
+                </Text>
+              )}
+            </View>
+
+            {getSyncStatus.syncProgress.message && (
+              <Text style={styles.progressMessage}>
+                {getSyncStatus.syncProgress.message}
+              </Text>
+            )}
+          </View>
+        )}
+
         <View style={styles.calendarActions}>
           <TouchableOpacity
-            style={styles.syncButton}
+            style={[
+              styles.syncButton,
+              (syncingCalendarId === calendar._id) && styles.syncButtonLoading
+            ]}
             onPress={() => handleSyncNow(calendar)}
-            disabled={!calendar.isActive || isLoading}
+            disabled={!calendar.isActive || !!syncingCalendarId}
           >
-            <Ionicons name="sync-outline" size={16} color={calendar.isActive ? 'white' : '#ccc'} />
+            <Ionicons
+              name={syncingCalendarId === calendar._id ? "sync" : "sync-outline"}
+              size={16}
+              color={calendar.isActive ? 'white' : '#ccc'}
+            />
             <Text style={[styles.syncButtonText, !calendar.isActive && styles.disabledText]}>
-              {t('calendarSync.syncNow')}
+              {syncingCalendarId === calendar._id ? t('calendarSync.syncing') : t('calendarSync.syncNow')}
             </Text>
           </TouchableOpacity>
 
@@ -275,6 +405,104 @@ export default function ClubSettingsScreen() {
         )}
       </View>
 
+      {/* Sync History Section */}
+      <View style={styles.section}>
+        <TouchableOpacity
+          style={styles.sectionHeader}
+          onPress={() => setShowSyncHistory(!showSyncHistory)}
+        >
+          <Text style={styles.sectionTitle}>{t('calendarSync.syncHistory')}</Text>
+          <View style={styles.historyToggle}>
+            <Text style={styles.historyToggleText}>
+              {showSyncHistory ? t('calendarSync.hideHistory') : t('calendarSync.showHistory')}
+            </Text>
+            <Ionicons
+              name={showSyncHistory ? "chevron-up" : "chevron-down"}
+              size={20}
+              color="#666"
+            />
+          </View>
+        </TouchableOpacity>
+
+        {showSyncHistory && (
+          <View style={styles.historyContainer}>
+            {/* Overall Statistics */}
+            {clubSyncStatuses && clubSyncStatuses.length > 0 && (
+              <View style={styles.statsContainer}>
+                <Text style={styles.statsTitle}>{t('calendarSync.overallStats')}</Text>
+                <View style={styles.statsGrid}>
+                  {clubSyncStatuses.map(calendar => {
+                    const stats = calendar.stats;
+                    return (
+                      <View key={calendar.id} style={styles.statCard}>
+                        <Text style={styles.statCardTitle}>{calendar.name}</Text>
+                        <View style={styles.statRow}>
+                          <Text style={styles.statLabel}>{t('calendarSync.successRate')}:</Text>
+                          <Text style={[styles.statValue, { color: stats.successRate >= 80 ? '#4CAF50' : stats.successRate >= 60 ? '#FF9800' : '#F44336' }]}>
+                            {stats.successRate}%
+                          </Text>
+                        </View>
+                        <View style={styles.statRow}>
+                          <Text style={styles.statLabel}>{t('calendarSync.totalSyncs')}:</Text>
+                          <Text style={styles.statValue}>{stats.totalSyncs}</Text>
+                        </View>
+                        <View style={styles.statRow}>
+                          <Text style={styles.statLabel}>{t('calendarSync.avgDuration')}:</Text>
+                          <Text style={styles.statValue}>{formatSyncDuration(stats.avgSyncDurationMs)}</Text>
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
+            )}
+
+            {/* Recent Activity */}
+            <View style={styles.recentActivity}>
+              <Text style={styles.activityTitle}>{t('calendarSync.recentActivity')}</Text>
+              {recentSyncActivity && recentSyncActivity.length > 0 ? (
+                <View style={styles.activityList}>
+                  {recentSyncActivity.filter(activity => activity.clubId === clubId).map((activity, index) => (
+                    <View key={index} style={styles.activityItem}>
+                      <View style={styles.activityHeader}>
+                        <View style={styles.activityInfo}>
+                          <Text style={styles.activityStatus}>
+                            {getStatusIcon(activity.status)} {activity.calendarName}
+                          </Text>
+                          <Text style={styles.activityTime}>
+                            {formatLastSync(activity.syncStartedAt)}
+                          </Text>
+                        </View>
+                        <Text style={styles.activityDuration}>
+                          {formatSyncDuration(activity.durationMs)}
+                        </Text>
+                      </View>
+
+                      {activity.progress && (
+                        <Text style={styles.activityProgress}>
+                          {formatSyncProgress(activity.progress)}
+                        </Text>
+                      )}
+
+                      {activity.status === 'error' && activity.errorMessage && (
+                        <Text style={styles.activityError}>
+                          {activity.errorMessage}
+                        </Text>
+                      )}
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <View style={styles.emptyActivity}>
+                  <Ionicons name="time-outline" size={32} color="#ccc" />
+                  <Text style={styles.emptyActivityText}>{t('calendarSync.noRecentActivity')}</Text>
+                </View>
+              )}
+            </View>
+          </View>
+        )}
+      </View>
+
       {/* Calendar Form Modal */}
       <Modal
         visible={isAddingCalendar || !!editingCalendar}
@@ -292,8 +520,8 @@ export default function ClubSettingsScreen() {
             <Text style={styles.modalTitle}>
               {editingCalendar ? t('calendarSync.editCalendar') : t('calendarSync.addCalendar')}
             </Text>
-            <TouchableOpacity onPress={handleSaveCalendar} disabled={isLoading}>
-              <Text style={[styles.modalSaveText, isLoading && styles.disabledText]}>
+            <TouchableOpacity onPress={handleSaveCalendar} disabled={isSavingCalendar}>
+              <Text style={[styles.modalSaveText, isSavingCalendar && styles.disabledText]}>
                 {t('common.save')}
               </Text>
             </TouchableOpacity>
@@ -484,6 +712,9 @@ const styles = StyleSheet.create({
     gap: 4,
     flex: 1,
   },
+  syncButtonLoading: {
+    backgroundColor: '#1976D2',
+  },
   syncButtonText: {
     color: 'white',
     fontSize: 12,
@@ -497,6 +728,63 @@ const styles = StyleSheet.create({
   },
   disabledText: {
     color: '#ccc',
+  },
+  progressContainer: {
+    backgroundColor: '#f8f9fa',
+    padding: 12,
+    borderRadius: 8,
+    marginVertical: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#2196F3',
+  },
+  progressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  progressPhase: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    flex: 1,
+  },
+  progressPercent: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#2196F3',
+  },
+  progressBar: {
+    height: 6,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 3,
+    marginBottom: 8,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#2196F3',
+    borderRadius: 3,
+  },
+  progressStats: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 4,
+  },
+  progressStat: {
+    fontSize: 11,
+    color: '#666',
+    backgroundColor: 'white',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 3,
+  },
+  progressMessage: {
+    fontSize: 11,
+    color: '#666',
+    fontStyle: 'italic',
+    marginTop: 4,
   },
   modalContainer: {
     flex: 1,
@@ -554,5 +842,126 @@ const styles = StyleSheet.create({
     color: '#666',
     marginTop: 4,
     fontStyle: 'italic',
+  },
+  // Sync History Styles
+  historyToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  historyToggleText: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '500',
+  },
+  historyContainer: {
+    marginTop: 16,
+  },
+  statsContainer: {
+    marginBottom: 24,
+  },
+  statsTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 12,
+  },
+  statsGrid: {
+    gap: 12,
+  },
+  statCard: {
+    backgroundColor: '#f8f9fa',
+    padding: 12,
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#2196F3',
+  },
+  statCardTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
+  },
+  statRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#666',
+  },
+  statValue: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#333',
+  },
+  recentActivity: {
+    marginTop: 8,
+  },
+  activityTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 12,
+  },
+  activityList: {
+    gap: 8,
+  },
+  activityItem: {
+    backgroundColor: 'white',
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#eee',
+  },
+  activityHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 6,
+  },
+  activityInfo: {
+    flex: 1,
+  },
+  activityStatus: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 2,
+  },
+  activityTime: {
+    fontSize: 12,
+    color: '#666',
+  },
+  activityDuration: {
+    fontSize: 12,
+    color: '#666',
+    fontWeight: '500',
+  },
+  activityProgress: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 4,
+  },
+  activityError: {
+    fontSize: 11,
+    color: '#F44336',
+    fontStyle: 'italic',
+    backgroundColor: '#ffebee',
+    padding: 6,
+    borderRadius: 4,
+    marginTop: 4,
+  },
+  emptyActivity: {
+    alignItems: 'center',
+    padding: 24,
+  },
+  emptyActivityText: {
+    fontSize: 14,
+    color: '#999',
+    marginTop: 8,
+    textAlign: 'center',
   },
 });

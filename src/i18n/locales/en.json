@@ -172,5 +172,37 @@
   },
   "error": {
     "title": "Error"
+  },
+  "calendarSync": {
+    "calendarSyncs": "Calendar Syncs",
+    "addCalendar": "Add Calendar",
+    "editCalendar": "Edit Calendar",
+    "calendarName": "Calendar Name",
+    "syncNow": "Sync Now",
+    "syncing": "Syncing...",
+    "lastSync": "Last sync",
+    "neverSynced": "Never synced",
+    "syncSuccess": "Sync Successful",
+    "syncSuccessMessage": "Successfully processed {{count}} events ({{created}} created, {{updated}} updated)",
+    "syncError": "Sync failed",
+    "saveSuccess": "Calendar sync saved successfully",
+    "saveError": "Failed to save calendar sync",
+    "deleteTitle": "Delete Calendar Sync",
+    "deleteConfirm": "Are you sure you want to delete '{{name}}'?",
+    "deleteSuccess": "Calendar sync deleted",
+    "deleteError": "Failed to delete calendar sync",
+    "toggleError": "Failed to toggle calendar sync",
+    "invalidUrl": "Please enter a valid URL",
+    "syncHistory": "Sync History",
+    "showHistory": "Show History",
+    "hideHistory": "Hide History",
+    "overallStats": "Overall Statistics",
+    "recentActivity": "Recent Activity",
+    "successRate": "Success Rate",
+    "totalSyncs": "Total Syncs",
+    "avgDuration": "Avg Duration",
+    "noRecentActivity": "No recent sync activity",
+    "noCalendars": "No calendar syncs configured",
+    "addFirstCalendar": "Add your first calendar sync to get started"
   }
 }

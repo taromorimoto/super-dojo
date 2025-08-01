@@ -172,5 +172,37 @@
   },
   "error": {
     "title": "Virhe"
+  },
+  "calendarSync": {
+    "calendarSyncs": "Kalenterisynkronoinnit",
+    "addCalendar": "Lisää kalenteri",
+    "editCalendar": "Muokkaa kalenteria",
+    "calendarName": "Kalenterin nimi",
+    "syncNow": "Synkronoi nyt",
+    "syncing": "Synkronoidaan...",
+    "lastSync": "Viimeisin synkronointi",
+    "neverSynced": "Ei koskaan synkronoitu",
+    "syncSuccess": "Synkronointi onnistui",
+    "syncSuccessMessage": "Käsiteltiin {{count}} tapahtumaa ({{created}} luotu, {{updated}} päivitetty)",
+    "syncError": "Synkronointi epäonnistui",
+    "saveSuccess": "Kalenterisynkronointi tallennettu onnistuneesti",
+    "saveError": "Kalenterisynkronoinnin tallentaminen epäonnistui",
+    "deleteTitle": "Poista kalenterisynkronointi",
+    "deleteConfirm": "Haluatko varmasti poistaa '{{name}}'?",
+    "deleteSuccess": "Kalenterisynkronointi poistettu",
+    "deleteError": "Kalenterisynkronoinnin poistaminen epäonnistui",
+    "toggleError": "Kalenterisynkronoinnin kytkeminen epäonnistui",
+    "invalidUrl": "Anna kelvollinen URL-osoite",
+    "syncHistory": "Synkronointihistoria",
+    "showHistory": "Näytä historia",
+    "hideHistory": "Piilota historia",
+    "overallStats": "Kokonaistilastot",
+    "recentActivity": "Viimeaikainen toiminta",
+    "successRate": "Onnistumisprosentti",
+    "totalSyncs": "Synkronointeja yhteensä",
+    "avgDuration": "Keskimääräinen kesto",
+    "noRecentActivity": "Ei viimeaikaista synkronointitoimintaa",
+    "noCalendars": "Kalenterisynkronointeja ei ole määritetty",
+    "addFirstCalendar": "Lisää ensimmäinen kalenterisynkronointi aloittaaksesi"
   }
 }

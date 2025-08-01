@@ -354,6 +354,10 @@ export const createEventFromSync = mutation({
     type: v.union(v.literal("training"), v.literal("competition"), v.literal("seminar"), v.literal("grading")),
     calendarSource: v.optional(v.string()),
     externalId: v.optional(v.string()),
+    calendarSyncId: v.optional(v.id("calendarSyncs")),
+    syncGeneration: v.optional(v.number()),
+    recurringEventId: v.optional(v.string()),
+    instanceDate: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const now = Date.now();
@@ -367,6 +371,10 @@ export const createEventFromSync = mutation({
       type: args.type,
       calendarSource: args.calendarSource,
       externalId: args.externalId,
+      calendarSyncId: args.calendarSyncId,
+      syncGeneration: args.syncGeneration,
+      recurringEventId: args.recurringEventId,
+      instanceDate: args.instanceDate,
       createdAt: now,
       updatedAt: now,
     });
@@ -386,6 +394,10 @@ export const updateEventFromSync = mutation({
     type: v.union(v.literal("training"), v.literal("competition"), v.literal("seminar"), v.literal("grading")),
     calendarSource: v.optional(v.string()),
     externalId: v.optional(v.string()),
+    calendarSyncId: v.optional(v.id("calendarSyncs")),
+    syncGeneration: v.optional(v.number()),
+    recurringEventId: v.optional(v.string()),
+    instanceDate: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const { id, ...updates } = args;

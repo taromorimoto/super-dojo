@@ -67,10 +67,17 @@ export default defineSchema({
     type: v.union(v.literal("training"), v.literal("competition"), v.literal("seminar"), v.literal("grading")),
     calendarSource: v.optional(v.string()), // ICS file source URL
     externalId: v.optional(v.string()), // External calendar event ID
+    calendarSyncId: v.optional(v.id("calendarSyncs")), // Track which sync created this
+    syncGeneration: v.optional(v.number()), // Sync timestamp for cleanup
+    recurringEventId: v.optional(v.string()), // Base UID for recurring events
+    instanceDate: v.optional(v.number()), // Specific date for this instance
     createdAt: v.number(),
     updatedAt: v.number(),
   }).index("by_club", ["clubId"])
-   .index("by_club_start_time", ["clubId", "startTime"]),
+   .index("by_club_start_time", ["clubId", "startTime"])
+   .index("by_calendar_sync", ["calendarSyncId"])
+   .index("by_sync_generation", ["calendarSyncId", "syncGeneration"])
+   .index("by_recurring_event", ["recurringEventId"]),
 
   // Event attendance tracking
   attendance: defineTable({
@@ -139,11 +146,77 @@ export default defineSchema({
     icsUrl: v.string(),
     isActive: v.boolean(),
     lastSyncAt: v.optional(v.number()),
-    lastSyncStatus: v.optional(v.union(v.literal("success"), v.literal("error"))),
+    lastSyncStatus: v.optional(v.union(
+      v.literal("idle"),
+      v.literal("running"),
+      v.literal("success"),
+      v.literal("error"),
+      v.literal("cancelled")
+    )),
     lastSyncError: v.optional(v.string()),
+    // Progress tracking
+    currentSyncStartedAt: v.optional(v.number()),
+    syncProgress: v.optional(v.object({
+      phase: v.union(
+        v.literal("fetching"),
+        v.literal("parsing"),
+        v.literal("processing"),
+        v.literal("cleanup"),
+        v.literal("completed")
+      ),
+      totalEvents: v.number(),
+      processedEvents: v.number(),
+      createdEvents: v.number(),
+      updatedEvents: v.number(),
+      skippedEvents: v.number(),
+      errorEvents: v.number(),
+      removedEvents: v.number(),
+      message: v.optional(v.string()),
+    })),
+    // Sync statistics
+    totalSyncs: v.optional(v.number()),
+    successfulSyncs: v.optional(v.number()),
+    failedSyncs: v.optional(v.number()),
+    avgSyncDurationMs: v.optional(v.number()),
     createdBy: v.id("users"), // Convex Auth user ID
     createdAt: v.number(),
     updatedAt: v.number(),
   }).index("by_club", ["clubId"])
-   .index("by_active", ["isActive"]),
+   .index("by_active", ["isActive"])
+   .index("by_status", ["lastSyncStatus"]),
+
+  // Calendar sync history for detailed logging
+  calendarSyncHistory: defineTable({
+    calendarSyncId: v.id("calendarSyncs"),
+    syncStartedAt: v.number(),
+    syncCompletedAt: v.optional(v.number()),
+    status: v.union(v.literal("running"), v.literal("success"), v.literal("error"), v.literal("cancelled")),
+    errorMessage: v.optional(v.string()),
+    progress: v.object({
+      phase: v.optional(v.union(
+        v.literal("fetching"),
+        v.literal("parsing"),
+        v.literal("processing"),
+        v.literal("cleanup"),
+        v.literal("completed")
+      )),
+      totalEvents: v.number(),
+      processedEvents: v.number(),
+      createdEvents: v.number(),
+      updatedEvents: v.number(),
+      skippedEvents: v.number(),
+      errorEvents: v.number(),
+      removedEvents: v.number(),
+      message: v.optional(v.string()),
+    }),
+    durationMs: v.optional(v.number()),
+    metadata: v.optional(v.object({
+      icsFileSize: v.optional(v.number()),
+      parseTime: v.optional(v.number()),
+      processTime: v.optional(v.number()),
+      cleanupTime: v.optional(v.number()),
+    })),
+  }).index("by_calendar_sync", ["calendarSyncId"])
+   .index("by_started_at", ["syncStartedAt"])
+   .index("by_status", ["status"]),
 });
