@@ -95,9 +95,7 @@ export default function HomeScreen() {
   };
 
   const renderEventItem = ({ item }: any) => (
-    <TouchableOpacity>
-      <EventItemWithResponse event={item} />
-    </TouchableOpacity>
+    <EventItemWithResponse event={item} />
   );
 
   return (
@@ -155,22 +153,19 @@ export default function HomeScreen() {
       </View>
 
       {profile && (
-        <View style={styles.upcomingEvents}>
-          <Text style={styles.sectionTitle}>{t('events.upcomingEvents')}</Text>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>
+            {t('events.upcomingEvents')} ({upcomingEvents?.length || 0})
+          </Text>
           {upcomingEvents && upcomingEvents.length > 0 ? (
             <FlatList
               data={upcomingEvents.slice(0, 5)} // Show max 5 events on home screen
               renderItem={renderEventItem}
               keyExtractor={(item) => item._id}
               scrollEnabled={false}
-              style={styles.eventsList}
             />
           ) : (
-            <View style={styles.activityCard}>
-              <Text style={styles.activityText}>
-                {t('events.noUpcomingEvents')}
-              </Text>
-            </View>
+            <Text style={styles.emptyText}>{t('events.noUpcomingEvents')}</Text>
           )}
         </View>
       )}
@@ -249,7 +244,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
     marginBottom: 16,
@@ -274,38 +269,16 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
   },
-  upcomingEvents: {
-    padding: 16,
-  },
-  eventsList: {
+  section: {
     backgroundColor: 'white',
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  activityCard: {
-    backgroundColor: 'white',
+    marginTop: 8,
     padding: 20,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
   },
-  activityText: {
-    fontSize: 14,
-    color: '#666',
+  emptyText: {
+    fontSize: 16,
+    color: '#999',
     textAlign: 'center',
     fontStyle: 'italic',
+    paddingVertical: 20,
   },
 });
