@@ -40,7 +40,7 @@ export default function ClubSettingsScreen() {
     name: '',
     icsUrl: '',
   });
-  const [syncingCalendarId, setSyncingCalendarId] = useState<string | null>(null); // Store calendar ID when syncing
+  // Removed syncingCalendarId state - now using runningSyncs directly
   const [isSavingCalendar, setIsSavingCalendar] = useState(false); // Loading state for saving calendar forms
   const [showSyncHistory, setShowSyncHistory] = useState(false); // Toggle sync history section
 
@@ -48,9 +48,7 @@ export default function ClubSettingsScreen() {
   const updateCalendarSync = useMutation(api.calendarSync.updateCalendarSync);
   const deleteCalendarSync = useMutation(api.calendarSync.deleteCalendarSync);
   const syncCalendarEvents = useAction(api.calendarSync.syncCalendarEvents);
-  const getSyncStatus = useQuery(api.calendarSync.getSyncStatus,
-    syncingCalendarId ? { calendarSyncId: syncingCalendarId as any } : "skip"
-  );
+  // Removed getSyncStatus query - using runningSyncs directly for sync state
 
   const isAdmin = userMembership?.role === 'admin';
 
@@ -144,39 +142,16 @@ export default function ClubSettingsScreen() {
     }
   };
 
-    const handleSyncNow = async (calendar: any) => {
-    setSyncingCalendarId(calendar._id);
+  const handleSyncNow = async (calendar: any) => {
     try {
-      // Start sync without awaiting (let polling handle progress)
-      syncCalendarEvents({ calendarSyncId: calendar._id });
+      // Start sync without awaiting (let runningSyncs handle progress tracking)
+      await syncCalendarEvents({ calendarSyncId: calendar._id });
     } catch (error: any) {
       Alert.alert(t('error.title'), error.message || t('calendarSync.syncError'));
-      setSyncingCalendarId(null);
     }
   };
 
-  // Stop polling when sync is complete
-  React.useEffect(() => {
-    if (getSyncStatus && !getSyncStatus.isCurrentlyRunning && syncingCalendarId) {
-      const wasSuccessful = getSyncStatus.lastSyncStatus === 'success';
-      const progress = getSyncStatus.syncProgress;
-
-      if (wasSuccessful && progress) {
-        Alert.alert(
-          t('calendarSync.syncSuccess'),
-          t('calendarSync.syncSuccessMessage', {
-            count: progress.processedEvents,
-            created: progress.createdEvents,
-            updated: progress.updatedEvents
-          })
-        );
-      } else if (getSyncStatus.lastSyncStatus === 'error') {
-        Alert.alert(t('error.title'), getSyncStatus.lastSyncError || t('calendarSync.syncError'));
-      }
-
-      setSyncingCalendarId(null);
-    }
-  }, [getSyncStatus?.isCurrentlyRunning, getSyncStatus?.lastSyncStatus]);
+  // Note: Sync completion handling is now managed by the backend and runningSyncs updates
 
     const formatLastSync = (timestamp?: number) => {
     if (!timestamp) return t('calendarSync.neverSynced');
@@ -281,135 +256,145 @@ export default function ClubSettingsScreen() {
         </View>
 
         {/* Real-time Sync Progress */}
-        {syncingCalendarId === calendar._id && getSyncStatus?.isCurrentlyRunning && getSyncStatus?.syncProgress && (
-          <View style={styles.progressContainer}>
-            {/* Header with phase and percentage */}
-            <View style={styles.progressHeader}>
-              <Text style={styles.progressPhase}>
-                {getSyncStatus.syncProgress.phase === 'fetching' && '🔄 Fetching calendar...'}
-                {getSyncStatus.syncProgress.phase === 'parsing' && '📖 Parsing events...'}
-                {getSyncStatus.syncProgress.phase === 'processing' && '⚙️ Processing events...'}
-                {getSyncStatus.syncProgress.phase === 'cleanup' && '🧹 Cleaning up...'}
-                {getSyncStatus.syncProgress.phase === 'completed' && '✅ Completed'}
-              </Text>
-              <Text style={styles.progressPercent}>
-                {getSyncStatus.syncProgress.totalEvents > 0
-                  ? Math.round((getSyncStatus.syncProgress.processedEvents / getSyncStatus.syncProgress.totalEvents) * 100)
-                  : 0}%
-              </Text>
-            </View>
+        {(() => {
+          const runningSync = runningSyncs?.find(sync => sync.id === calendar._id);
+          if (!runningSync?.syncProgress) return null;
 
-            {/* Time and Performance Info */}
-            <View style={styles.progressTimingRow}>
-              <Text style={styles.progressTiming}>
-                ⏱️ {formatElapsedTime(getSyncStatus.currentSyncStartedAt)}
-              </Text>
-              {getSyncStatus.syncProgress.phase === 'processing' && getSyncStatus.syncProgress.totalEvents > 0 && (
-                <Text style={styles.progressTiming}>
-                  🔥 {Math.round(getSyncStatus.syncProgress.processedEvents / ((Date.now() - (getSyncStatus.currentSyncStartedAt || Date.now())) / 1000))} events/s
+          const progress = runningSync.syncProgress;
+
+          return (
+            <View style={styles.progressContainer}>
+              {/* Header with phase and percentage */}
+              <View style={styles.progressHeader}>
+                <Text style={styles.progressPhase}>
+                  {progress.phase === 'fetching' && '🔄 Fetching calendar...'}
+                  {progress.phase === 'parsing' && '📖 Parsing events...'}
+                  {progress.phase === 'processing' && '⚙️ Processing events...'}
+                  {progress.phase === 'cleanup' && '🧹 Cleaning up...'}
+                  {progress.phase === 'completed' && '✅ Completed'}
                 </Text>
-              )}
-            </View>
-
-            {/* Progress Bar */}
-            {getSyncStatus.syncProgress.totalEvents > 0 && (
-              <View style={styles.progressBar}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    { width: `${(getSyncStatus.syncProgress.processedEvents / getSyncStatus.syncProgress.totalEvents) * 100}%` }
-                  ]}
-                />
+                <Text style={styles.progressPercent}>
+                  {progress.totalEvents > 0
+                    ? Math.round((progress.processedEvents / progress.totalEvents) * 100)
+                    : 0}%
+                </Text>
               </View>
-            )}
 
-            {/* Main Statistics */}
-            <View style={styles.progressStats}>
-              <Text style={styles.progressStat}>
-                📊 {getSyncStatus.syncProgress.processedEvents}/{getSyncStatus.syncProgress.totalEvents} events
-              </Text>
-              {getSyncStatus.syncProgress.createdEvents > 0 && (
-                <Text style={styles.progressStat}>
-                  ➕ {getSyncStatus.syncProgress.createdEvents} created
+              {/* Time and Performance Info */}
+              <View style={styles.progressTimingRow}>
+                <Text style={styles.progressTiming}>
+                  ⏱️ {formatElapsedTime(runningSync.currentSyncStartedAt)}
                 </Text>
-              )}
-              {getSyncStatus.syncProgress.updatedEvents > 0 && (
-                <Text style={styles.progressStat}>
-                  ✏️ {getSyncStatus.syncProgress.updatedEvents} updated
-                </Text>
-              )}
-              {getSyncStatus.syncProgress.skippedEvents > 0 && (
-                <Text style={styles.progressStat}>
-                  ⏭️ {getSyncStatus.syncProgress.skippedEvents} skipped
-                </Text>
-              )}
-              {getSyncStatus.syncProgress.errorEvents > 0 && (
-                <Text style={styles.progressStat}>
-                  ❌ {getSyncStatus.syncProgress.errorEvents} errors
-                </Text>
-              )}
-              {getSyncStatus.syncProgress.removedEvents > 0 && (
-                <Text style={styles.progressStat}>
-                  🗑️ {getSyncStatus.syncProgress.removedEvents} removed
-                </Text>
-              )}
-            </View>
-
-            {/* Current Message */}
-            {getSyncStatus.syncProgress.message && (
-              <Text style={styles.progressMessage}>
-                {getSyncStatus.syncProgress.message}
-              </Text>
-            )}
-
-            {/* Cleanup Details */}
-            {getSyncStatus?.syncProgress?.cleanupDetails && getSyncStatus.syncProgress.cleanupDetails.length > 0 && (
-              <View style={styles.cleanupDetails}>
-                <Text style={styles.cleanupTitle}>🗑️ Recently Removed Events:</Text>
-                {getSyncStatus.syncProgress.cleanupDetails.map((eventDetail, index) => (
-                  <Text key={index} style={styles.cleanupItem}>
-                    • {eventDetail}
-                  </Text>
-                ))}
-                {getSyncStatus.syncProgress.removedEvents > getSyncStatus.syncProgress.cleanupDetails.length && (
-                  <Text style={styles.cleanupMore}>
-                    ... and {getSyncStatus.syncProgress.removedEvents - getSyncStatus.syncProgress.cleanupDetails.length} more
+                {progress.phase === 'processing' && progress.totalEvents > 0 && runningSync.currentSyncStartedAt && (
+                  <Text style={styles.progressTiming}>
+                    🔥 {Math.round(progress.processedEvents / ((Date.now() - runningSync.currentSyncStartedAt) / 1000))} events/s
                   </Text>
                 )}
               </View>
-            )}
 
-            {/* Advanced Progress Details */}
-            <View style={styles.progressDetails}>
-              <Text style={styles.progressDetail}>
-                📈 Success Rate: {getSyncStatus.stats.successRate}% ({getSyncStatus.stats.successfulSyncs}/{getSyncStatus.stats.totalSyncs})
-              </Text>
-              <Text style={styles.progressDetail}>
-                ⚡ Avg Duration: {formatSyncDuration(getSyncStatus.stats.avgSyncDurationMs)}
-              </Text>
+              {/* Progress Bar */}
+              {progress.totalEvents > 0 && (
+                <View style={styles.progressBar}>
+                  <View
+                    style={[
+                      styles.progressFill,
+                      { width: `${(progress.processedEvents / progress.totalEvents) * 100}%` }
+                    ]}
+                  />
+                </View>
+              )}
+
+              {/* Main Statistics */}
+              <View style={styles.progressStats}>
+                <Text style={styles.progressStat}>
+                  📊 {progress.processedEvents}/{progress.totalEvents} events
+                </Text>
+                {progress.createdEvents > 0 && (
+                  <Text style={styles.progressStat}>
+                    ➕ {progress.createdEvents} created
+                  </Text>
+                )}
+                {progress.updatedEvents > 0 && (
+                  <Text style={styles.progressStat}>
+                    ✏️ {progress.updatedEvents} updated
+                  </Text>
+                )}
+                {progress.skippedEvents > 0 && (
+                  <Text style={styles.progressStat}>
+                    ⏭️ {progress.skippedEvents} skipped
+                  </Text>
+                )}
+                {progress.errorEvents > 0 && (
+                  <Text style={styles.progressStat}>
+                    ❌ {progress.errorEvents} errors
+                  </Text>
+                )}
+                {progress.removedEvents > 0 && (
+                  <Text style={styles.progressStat}>
+                    🗑️ {progress.removedEvents} removed
+                  </Text>
+                )}
+              </View>
+
+              {/* Current Message */}
+              {progress.message && (
+                <Text style={styles.progressMessage}>
+                  {progress.message}
+                </Text>
+              )}
+
+              {/* Cleanup Details */}
+              {progress.cleanupDetails && progress.cleanupDetails.length > 0 && (
+                <View style={styles.cleanupDetails}>
+                  <Text style={styles.cleanupTitle}>🗑️ Recently Removed Events:</Text>
+                  {progress.cleanupDetails.map((eventDetail, index) => (
+                    <Text key={index} style={styles.cleanupItem}>
+                      • {eventDetail}
+                    </Text>
+                  ))}
+                  {progress.removedEvents > progress.cleanupDetails.length && (
+                    <Text style={styles.cleanupMore}>
+                      ... and {progress.removedEvents - progress.cleanupDetails.length} more
+                    </Text>
+                  )}
+                </View>
+              )}
             </View>
-          </View>
-        )}
+          );
+        })()}
 
         <View style={styles.calendarActions}>
-          <TouchableOpacity
-            style={[
-              styles.syncButton,
-              (syncingCalendarId === calendar._id) && styles.syncButtonLoading,
-              (!calendar.isActive || !!syncingCalendarId || (syncingCalendarId === calendar._id && getSyncStatus?.isCurrentlyRunning)) && styles.syncButtonDisabled
-            ]}
-            onPress={() => handleSyncNow(calendar)}
-            disabled={!calendar.isActive || !!syncingCalendarId || (syncingCalendarId === calendar._id && getSyncStatus?.isCurrentlyRunning)}
-          >
-            <Ionicons
-              name={syncingCalendarId === calendar._id ? "sync" : "sync-outline"}
-              size={16}
-              color={calendar.isActive ? 'white' : '#ccc'}
-            />
-            <Text style={[styles.syncButtonText, !calendar.isActive && styles.disabledText]}>
-              {syncingCalendarId === calendar._id ? t('calendarSync.syncing') : t('calendarSync.syncNow')}
-            </Text>
-          </TouchableOpacity>
+          {(() => {
+            // Check if this specific calendar is currently syncing
+            const isCalendarSyncing = runningSyncs?.some(sync => sync.id === calendar._id);
+            const isAnyCalendarSyncing = runningSyncs && runningSyncs.length > 0;
+            const isDisabled = !calendar.isActive || isCalendarSyncing;
+
+            return (
+              <TouchableOpacity
+                style={[
+                  styles.syncButton,
+                  isCalendarSyncing && styles.syncButtonLoading,
+                  isDisabled && styles.syncButtonDisabled
+                ]}
+                onPress={() => handleSyncNow(calendar)}
+                disabled={isDisabled}
+              >
+                <Ionicons
+                  name={isCalendarSyncing ? "sync" : "sync-outline"}
+                  size={16}
+                  color={isDisabled ? '#ccc' : 'white'}
+                />
+                <Text style={[
+                  styles.syncButtonText,
+                  isDisabled && styles.disabledText
+                ]}>
+                  {isCalendarSyncing ? t('calendarSync.syncing') : t('calendarSync.syncNow')}
+                </Text>
+              </TouchableOpacity>
+            );
+          })()}
+
 
           <TouchableOpacity
             style={styles.editButton}
