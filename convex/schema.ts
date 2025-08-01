@@ -172,6 +172,7 @@ export default defineSchema({
       errorEvents: v.number(),
       removedEvents: v.number(),
       message: v.optional(v.string()),
+      cleanupDetails: v.optional(v.array(v.string())),
     })),
     // Sync statistics
     totalSyncs: v.optional(v.number()),
@@ -208,6 +209,7 @@ export default defineSchema({
       errorEvents: v.number(),
       removedEvents: v.number(),
       message: v.optional(v.string()),
+      cleanupDetails: v.optional(v.array(v.string())),
     }),
     durationMs: v.optional(v.number()),
     metadata: v.optional(v.object({

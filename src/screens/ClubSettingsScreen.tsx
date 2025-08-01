@@ -28,6 +28,8 @@ export default function ClubSettingsScreen() {
   const calendarSyncs = useQuery(api.calendarSync.getClubCalendarSyncs, { clubId: clubId as any });
   const clubSyncStatuses = useQuery(api.calendarSync.getClubSyncStatuses, { clubId: clubId as any });
   const recentSyncActivity = useQuery(api.calendarSync.getRecentSyncActivity, { limit: 10 });
+  const runningSyncs = useQuery(api.calendarSync.getRunningSyncs, {});
+  const syncStats = useQuery(api.calendarSync.getSyncStatsSummary, { clubId: clubId as any });
   const userMembership = useQuery(api.clubs.isUserMemberOfClub,
     user ? { userId: user._id as Id<"users">, clubId: clubId as any } : "skip"
   );
@@ -227,6 +229,27 @@ export default function ClubSettingsScreen() {
     }
   };
 
+  const formatElapsedTime = (startTime?: number) => {
+    if (!startTime) return '0s';
+    const elapsed = Date.now() - startTime;
+
+    if (elapsed < 1000) {
+      return `${elapsed}ms`;
+    } else if (elapsed < 60000) {
+      return `${(elapsed / 1000).toFixed(1)}s`;
+    } else {
+      return `${Math.floor(elapsed / 60000)}m ${Math.floor((elapsed % 60000) / 1000)}s`;
+    }
+  };
+
+  const formatFileSize = (bytes?: number) => {
+    if (!bytes) return '-';
+
+    if (bytes < 1024) return `${bytes}B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
+  };
+
   const renderCalendarItem = ({ item }: any) => {
     const calendar = item;
 
@@ -260,6 +283,7 @@ export default function ClubSettingsScreen() {
         {/* Real-time Sync Progress */}
         {syncingCalendarId === calendar._id && getSyncStatus?.isCurrentlyRunning && getSyncStatus?.syncProgress && (
           <View style={styles.progressContainer}>
+            {/* Header with phase and percentage */}
             <View style={styles.progressHeader}>
               <Text style={styles.progressPhase}>
                 {getSyncStatus.syncProgress.phase === 'fetching' && '🔄 Fetching calendar...'}
@@ -275,6 +299,19 @@ export default function ClubSettingsScreen() {
               </Text>
             </View>
 
+            {/* Time and Performance Info */}
+            <View style={styles.progressTimingRow}>
+              <Text style={styles.progressTiming}>
+                ⏱️ {formatElapsedTime(getSyncStatus.currentSyncStartedAt)}
+              </Text>
+              {getSyncStatus.syncProgress.phase === 'processing' && getSyncStatus.syncProgress.totalEvents > 0 && (
+                <Text style={styles.progressTiming}>
+                  🔥 {Math.round(getSyncStatus.syncProgress.processedEvents / ((Date.now() - (getSyncStatus.currentSyncStartedAt || Date.now())) / 1000))} events/s
+                </Text>
+              )}
+            </View>
+
+            {/* Progress Bar */}
             {getSyncStatus.syncProgress.totalEvents > 0 && (
               <View style={styles.progressBar}>
                 <View
@@ -286,6 +323,7 @@ export default function ClubSettingsScreen() {
               </View>
             )}
 
+            {/* Main Statistics */}
             <View style={styles.progressStats}>
               <Text style={styles.progressStat}>
                 📊 {getSyncStatus.syncProgress.processedEvents}/{getSyncStatus.syncProgress.totalEvents} events
@@ -300,18 +338,56 @@ export default function ClubSettingsScreen() {
                   ✏️ {getSyncStatus.syncProgress.updatedEvents} updated
                 </Text>
               )}
+              {getSyncStatus.syncProgress.skippedEvents > 0 && (
+                <Text style={styles.progressStat}>
+                  ⏭️ {getSyncStatus.syncProgress.skippedEvents} skipped
+                </Text>
+              )}
               {getSyncStatus.syncProgress.errorEvents > 0 && (
                 <Text style={styles.progressStat}>
                   ❌ {getSyncStatus.syncProgress.errorEvents} errors
                 </Text>
               )}
+              {getSyncStatus.syncProgress.removedEvents > 0 && (
+                <Text style={styles.progressStat}>
+                  🗑️ {getSyncStatus.syncProgress.removedEvents} removed
+                </Text>
+              )}
             </View>
 
+            {/* Current Message */}
             {getSyncStatus.syncProgress.message && (
               <Text style={styles.progressMessage}>
                 {getSyncStatus.syncProgress.message}
               </Text>
             )}
+
+            {/* Cleanup Details */}
+            {getSyncStatus?.syncProgress?.cleanupDetails && getSyncStatus.syncProgress.cleanupDetails.length > 0 && (
+              <View style={styles.cleanupDetails}>
+                <Text style={styles.cleanupTitle}>🗑️ Recently Removed Events:</Text>
+                {getSyncStatus.syncProgress.cleanupDetails.map((eventDetail, index) => (
+                  <Text key={index} style={styles.cleanupItem}>
+                    • {eventDetail}
+                  </Text>
+                ))}
+                {getSyncStatus.syncProgress.removedEvents > getSyncStatus.syncProgress.cleanupDetails.length && (
+                  <Text style={styles.cleanupMore}>
+                    ... and {getSyncStatus.syncProgress.removedEvents - getSyncStatus.syncProgress.cleanupDetails.length} more
+                  </Text>
+                )}
+              </View>
+            )}
+
+            {/* Advanced Progress Details */}
+            <View style={styles.progressDetails}>
+              <Text style={styles.progressDetail}>
+                📈 Success Rate: {getSyncStatus.stats.successRate}% ({getSyncStatus.stats.successfulSyncs}/{getSyncStatus.stats.totalSyncs})
+              </Text>
+              <Text style={styles.progressDetail}>
+                ⚡ Avg Duration: {formatSyncDuration(getSyncStatus.stats.avgSyncDurationMs)}
+              </Text>
+            </View>
           </View>
         )}
 
@@ -319,10 +395,11 @@ export default function ClubSettingsScreen() {
           <TouchableOpacity
             style={[
               styles.syncButton,
-              (syncingCalendarId === calendar._id) && styles.syncButtonLoading
+              (syncingCalendarId === calendar._id) && styles.syncButtonLoading,
+              (!calendar.isActive || !!syncingCalendarId || (syncingCalendarId === calendar._id && getSyncStatus?.isCurrentlyRunning)) && styles.syncButtonDisabled
             ]}
             onPress={() => handleSyncNow(calendar)}
-            disabled={!calendar.isActive || !!syncingCalendarId}
+            disabled={!calendar.isActive || !!syncingCalendarId || (syncingCalendarId === calendar._id && getSyncStatus?.isCurrentlyRunning)}
           >
             <Ionicons
               name={syncingCalendarId === calendar._id ? "sync" : "sync-outline"}
@@ -457,6 +534,68 @@ export default function ClubSettingsScreen() {
               </View>
             )}
 
+            {/* Global Sync Dashboard */}
+            {syncStats && (
+              <View style={styles.syncDashboard}>
+                <Text style={styles.dashboardTitle}>📊 Sync Overview</Text>
+                <View style={styles.dashboardGrid}>
+                  <View style={styles.dashboardCard}>
+                    <Text style={styles.dashboardValue}>{syncStats.activeCalendars}</Text>
+                    <Text style={styles.dashboardLabel}>Active Calendars</Text>
+                  </View>
+                  <View style={styles.dashboardCard}>
+                    <Text style={styles.dashboardValue}>{syncStats.successRate}%</Text>
+                    <Text style={styles.dashboardLabel}>Success Rate</Text>
+                  </View>
+                  <View style={styles.dashboardCard}>
+                    <Text style={styles.dashboardValue}>{formatSyncDuration(syncStats.avgSyncDurationMs)}</Text>
+                    <Text style={styles.dashboardLabel}>Avg Duration</Text>
+                  </View>
+                  <View style={styles.dashboardCard}>
+                    <Text style={styles.dashboardValue}>{syncStats.totalSyncs}</Text>
+                    <Text style={styles.dashboardLabel}>Total Syncs</Text>
+                  </View>
+                </View>
+
+                {/* Currently Running Syncs */}
+                {runningSyncs && runningSyncs.length > 0 && (
+                  <View style={styles.runningSyncsSection}>
+                    <Text style={styles.runningSyncsTitle}>🔄 Currently Running ({runningSyncs.length})</Text>
+                    {runningSyncs.filter(sync => sync.clubId === clubId).map((sync) => (
+                      <View key={sync.id} style={styles.runningSyncItem}>
+                        <Text style={styles.runningSyncName}>{sync.name}</Text>
+                        <Text style={styles.runningSyncTime}>
+                          Running for {formatElapsedTime(sync.currentSyncStartedAt)}
+                        </Text>
+                        {sync.syncProgress && (
+                          <>
+                            <Text style={styles.runningSyncProgress}>
+                              {sync.syncProgress.phase} - {sync.syncProgress.processedEvents}/{sync.syncProgress.totalEvents} events
+                            </Text>
+                            {sync.syncProgress.phase === 'cleanup' && sync.syncProgress.cleanupDetails && sync.syncProgress.cleanupDetails.length > 0 && (
+                              <View style={styles.runningCleanupDetails}>
+                                <Text style={styles.runningCleanupTitle}>🗑️ Removing:</Text>
+                                {sync.syncProgress.cleanupDetails.slice(-3).map((eventDetail, index) => (
+                                  <Text key={index} style={styles.runningCleanupItem}>
+                                    • {eventDetail}
+                                  </Text>
+                                ))}
+                                {sync.syncProgress.removedEvents > 0 && (
+                                  <Text style={styles.runningCleanupCount}>
+                                    Removed {sync.syncProgress.removedEvents} events
+                                  </Text>
+                                )}
+                              </View>
+                            )}
+                          </>
+                        )}
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </View>
+            )}
+
             {/* Recent Activity */}
             <View style={styles.recentActivity}>
               <Text style={styles.activityTitle}>{t('calendarSync.recentActivity')}</Text>
@@ -482,6 +621,66 @@ export default function ClubSettingsScreen() {
                         <Text style={styles.activityProgress}>
                           {formatSyncProgress(activity.progress)}
                         </Text>
+                      )}
+
+                      {/* Additional metadata for completed syncs */}
+                      {activity.metadata && (
+                        <View style={styles.activityMetadata}>
+                          {activity.metadata.icsFileSize && (
+                            <Text style={styles.activityMeta}>
+                              📄 {formatFileSize(activity.metadata.icsFileSize)}
+                            </Text>
+                          )}
+                          {activity.metadata.parseTime && (
+                            <Text style={styles.activityMeta}>
+                              📖 {formatSyncDuration(activity.metadata.parseTime)}
+                            </Text>
+                          )}
+                          {activity.metadata.processTime && (
+                            <Text style={styles.activityMeta}>
+                              ⚙️ {formatSyncDuration(activity.metadata.processTime)}
+                            </Text>
+                          )}
+                          {activity.metadata.cleanupTime && (
+                            <Text style={styles.activityMeta}>
+                              🧹 {formatSyncDuration(activity.metadata.cleanupTime)}
+                            </Text>
+                          )}
+                        </View>
+                      )}
+
+                      {/* Cleanup Details for completed syncs */}
+                      {activity.progress && (activity.progress.removedEvents > 0 || activity.metadata?.cleanupTime) && (
+                        activity.progress.cleanupDetails && activity.progress.cleanupDetails.length > 0 ? (
+                        <View style={styles.activityCleanupDetails}>
+                          <Text style={styles.activityCleanupTitle}>🗑️ Removed Events:</Text>
+                          {activity.progress.cleanupDetails.slice(0, 5).map((eventDetail, index) => (
+                            <Text key={index} style={styles.activityCleanupItem}>
+                              • {eventDetail}
+                            </Text>
+                          ))}
+                          {activity.progress.cleanupDetails.length > 5 && (
+                            <Text style={styles.activityCleanupMore}>
+                              ... and {activity.progress.cleanupDetails.length - 5} more
+                            </Text>
+                          )}
+                          {activity.progress.removedEvents > activity.progress.cleanupDetails.length && (
+                            <Text style={styles.activityCleanupMore}>
+                              Total removed: {activity.progress.removedEvents} events
+                            </Text>
+                          )}
+                        </View>
+                        ) : (
+                        <View style={styles.activityCleanupDetails}>
+                          <Text style={styles.activityCleanupTitle}>🗑️ Cleanup Summary:</Text>
+                          <Text style={styles.activityCleanupItem}>
+                            {activity.progress.removedEvents > 0
+                              ? `Removed ${activity.progress.removedEvents} orphaned events`
+                              : 'No orphaned events found - calendar is up to date'
+                            }
+                          </Text>
+                        </View>
+                        )
                       )}
 
                       {activity.status === 'error' && activity.errorMessage && (
@@ -715,6 +914,10 @@ const styles = StyleSheet.create({
   syncButtonLoading: {
     backgroundColor: '#1976D2',
   },
+  syncButtonDisabled: {
+    backgroundColor: '#bbb',
+    opacity: 0.6,
+  },
   syncButtonText: {
     color: 'white',
     fontSize: 12,
@@ -785,6 +988,199 @@ const styles = StyleSheet.create({
     color: '#666',
     fontStyle: 'italic',
     marginTop: 4,
+  },
+  progressTimingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  progressTiming: {
+    fontSize: 11,
+    color: '#4CAF50',
+    fontWeight: '600',
+  },
+  progressDetails: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+  },
+  progressDetail: {
+    fontSize: 10,
+    color: '#666',
+    marginBottom: 2,
+  },
+  syncDashboard: {
+    backgroundColor: '#f8f9fa',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  dashboardTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#333',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  dashboardGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 16,
+  },
+  dashboardCard: {
+    flex: 1,
+    minWidth: '45%',
+    backgroundColor: 'white',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  dashboardValue: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#2196F3',
+    marginBottom: 4,
+  },
+  dashboardLabel: {
+    fontSize: 10,
+    color: '#666',
+    textAlign: 'center',
+  },
+  runningSyncsSection: {
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+    paddingTop: 12,
+  },
+  runningSyncsTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
+  },
+  runningSyncItem: {
+    backgroundColor: 'white',
+    padding: 8,
+    borderRadius: 6,
+    marginBottom: 6,
+    borderLeftWidth: 3,
+    borderLeftColor: '#FFC107',
+  },
+  runningSyncName: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#333',
+  },
+  runningSyncTime: {
+    fontSize: 10,
+    color: '#666',
+    marginTop: 2,
+  },
+  runningSyncProgress: {
+    fontSize: 10,
+    color: '#2196F3',
+    marginTop: 2,
+    fontStyle: 'italic',
+  },
+  runningCleanupDetails: {
+    marginTop: 4,
+    padding: 4,
+    backgroundColor: '#fff8dc',
+    borderRadius: 3,
+    borderLeftWidth: 2,
+    borderLeftColor: '#ffa500',
+  },
+  runningCleanupTitle: {
+    fontSize: 9,
+    fontWeight: '600',
+    color: '#ff8c00',
+    marginBottom: 2,
+  },
+  runningCleanupItem: {
+    fontSize: 8,
+    color: '#cc7700',
+    marginBottom: 1,
+    paddingLeft: 4,
+  },
+  runningCleanupCount: {
+    fontSize: 9,
+    color: '#ff8c00',
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  activityMetadata: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+    marginTop: 4,
+  },
+  activityMeta: {
+    fontSize: 9,
+    color: '#888',
+    backgroundColor: '#f0f0f0',
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 2,
+  },
+  cleanupDetails: {
+    marginTop: 8,
+    padding: 8,
+    backgroundColor: '#fff3cd',
+    borderRadius: 6,
+    borderLeftWidth: 3,
+    borderLeftColor: '#ffc107',
+  },
+  cleanupTitle: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#856404',
+    marginBottom: 4,
+  },
+  cleanupItem: {
+    fontSize: 10,
+    color: '#6c5700',
+    marginBottom: 1,
+    paddingLeft: 8,
+  },
+  cleanupMore: {
+    fontSize: 10,
+    color: '#6c5700',
+    fontStyle: 'italic',
+    marginTop: 2,
+    paddingLeft: 8,
+  },
+  activityCleanupDetails: {
+    marginTop: 6,
+    padding: 6,
+    backgroundColor: '#fff8dc',
+    borderRadius: 4,
+    borderLeftWidth: 2,
+    borderLeftColor: '#daa520',
+  },
+  activityCleanupTitle: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#b8860b',
+    marginBottom: 3,
+  },
+  activityCleanupItem: {
+    fontSize: 9,
+    color: '#8b7355',
+    marginBottom: 1,
+    paddingLeft: 6,
+  },
+  activityCleanupMore: {
+    fontSize: 9,
+    color: '#8b7355',
+    fontStyle: 'italic',
+    marginTop: 2,
+    paddingLeft: 6,
   },
   modalContainer: {
     flex: 1,

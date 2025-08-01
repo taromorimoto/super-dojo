@@ -161,20 +161,64 @@ This ensures:
 
 ## Recurring Events
 
-### Current Implementation
+### Full RRULE Support ✅
 
-The current implementation handles basic recurring events by:
-1. Parsing individual VEVENT blocks from ICS
-2. Creating separate database entries for each occurrence
-3. Using unique external IDs for each instance
+The system now includes comprehensive support for recurring events with:
 
-### Future Enhancements
+#### Implemented Features
+- ✅ **RRULE Parsing**: Full support for recurrence rules including:
+  - Frequency: DAILY, WEEKLY, MONTHLY, YEARLY
+  - Interval: Custom intervals (every N days/weeks/months/years)
+  - Count: Limited number of occurrences
+  - Until: End date for recurrence
+  - ByDay: Specific days of the week (MO, TU, WE, etc.)
+  - ByMonthDay: Specific days of the month
+  - ByMonth: Specific months
+  - BySetPos: Position-based selection
 
-The system is designed to support advanced recurring event features:
-- **RRULE** parsing for recurrence rules
-- **EXDATE** handling for exception dates
-- **RECURRENCE-ID** for modified instances
-- **Complex patterns** (weekly, monthly, yearly recurrence)
+- ✅ **EXDATE Support**: Exception dates are properly handled to skip specific occurrences
+- ✅ **RECURRENCE-ID**: Modified instances of recurring events are supported
+- ✅ **Intelligent Sync Range**: Looks back 2 years to find base recurring events that have future occurrences
+- ✅ **Instance Management**: Each recurring event instance has unique identification while maintaining series relationship
+
+#### Database Schema
+Recurring events utilize these fields in the events table:
+```typescript
+{
+  recurringEventId: "base-event-uid",     // Links all instances of a series
+  instanceDate: 1640995200000,            // Specific occurrence timestamp
+  externalId: "uid_timestamp",            // Unique ID per instance
+  calendarSyncId: "sync_id",              // Track source sync
+}
+```
+
+#### Advanced Sync Process
+
+1. **Extended Range Processing**: Syncs look back 2 years to capture recurring events that started in the past
+2. **Limited Future Generation**: Creates recurring event instances up to 3 months in the future to avoid database bloat
+3. **RRULE Expansion**: Base events with RRULE are expanded into individual instances
+4. **Exception Handling**: EXDATE removes specific occurrences from the series
+5. **Modification Support**: RECURRENCE-ID events override specific instances with custom data
+6. **Intelligent Cleanup**: Only future event instances are removed during sync cleanup
+
+#### Example RRULE Patterns Supported
+
+```ics
+# Every Tuesday and Thursday
+RRULE:FREQ=WEEKLY;BYDAY=TU,TH
+
+# Every 2 weeks on Monday
+RRULE:FREQ=WEEKLY;INTERVAL=2;BYDAY=MO
+
+# Monthly on the 15th, for 12 occurrences
+RRULE:FREQ=MONTHLY;BYMONTHDAY=15;COUNT=12
+
+# Daily until December 31, 2024
+RRULE:FREQ=DAILY;UNTIL=20241231T235959Z
+
+# First Monday of every month
+RRULE:FREQ=MONTHLY;BYDAY=1MO
+```
 
 ## Usage Guide
 
@@ -322,6 +366,35 @@ const event = await ctx.runQuery(api.calendarSync.findEventByExternalId, {
   externalId: "external_event_id",
   clubId: "club_id"
 });
+
+// Get recurring event series for a club
+const recurringGroups = await ctx.runQuery(api.calendarSync.getRecurringEventGroups, {
+  clubId: "club_id_here",
+  limit: 10
+});
+
+console.log(`Found ${recurringGroups.length} recurring event series`);
+recurringGroups.forEach(group => {
+  console.log(`${group.title}: ${group.totalInstances} instances`);
+  if (group.nextInstance) {
+    console.log(`  Next: ${new Date(group.nextInstance.startTime)}`);
+  }
+});
+
+// Get all instances of a specific recurring event
+const instances = await ctx.runQuery(api.calendarSync.getRecurringEventInstances, {
+  recurringEventId: "recurring_event_uid",
+  clubId: "club_id_here"
+});
+
+// Check if an event is part of a recurring series
+const recurringInfo = await ctx.runQuery(api.calendarSync.isRecurringEvent, {
+  eventId: "event_id_here"
+});
+
+if (recurringInfo.isRecurring) {
+  console.log(`Part of series with ${recurringInfo.totalInstances} total instances`);
+}
 ```
 
 ## Error Handling
@@ -423,14 +496,18 @@ Track these metrics for operational health:
 
 ## Future Roadmap
 
+### Completed Features ✅
+
+1. ✅ **Advanced Recurring Events**: Full RRULE support with EXDATE and RECURRENCE-ID handling
+
 ### Planned Enhancements
 
-1. **Advanced Recurring Events**: Full RRULE support
-2. **Timezone Handling**: Better timezone conversion
-3. **Bidirectional Sync**: Export club events to external calendars
-4. **Sync Scheduling**: Configurable sync intervals
-5. **Calendar Categories**: Map external categories to event types
-6. **Conflict Resolution**: Handle overlapping events intelligently
+1. **Timezone Handling**: Better timezone conversion and VTIMEZONE support
+2. **Bidirectional Sync**: Export club events to external calendars
+3. **Sync Scheduling**: Configurable sync intervals per calendar
+4. **Calendar Categories**: Map external categories to event types
+5. **Conflict Resolution**: Handle overlapping events intelligently
+6. **RRULE Validation**: Pre-validate recurrence rules before sync
 
 ### Integration Possibilities
 
@@ -475,8 +552,15 @@ Track these metrics for operational health:
 
 #### Sync Actions
 
-- `syncCalendarEvents(calendarSyncId)` - Sync specific calendar
+- `syncCalendarEvents(calendarSyncId)` - Sync specific calendar with full recurring event support
 - `syncAllActiveCalendars()` - Sync all active calendars
+
+#### Recurring Event Queries
+
+- `getRecurringEventGroups(clubId, limit?)` - Get recurring event series grouped by UID
+- `getRecurringEventInstances(recurringEventId, clubId)` - Get all instances of a recurring event
+- `isRecurringEvent(eventId)` - Check if an event is part of a recurring series
+- `getRecurringEventStats(clubId)` - Get statistics about recurring vs single events
 
 ---
 
