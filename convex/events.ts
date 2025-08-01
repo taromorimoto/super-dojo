@@ -259,9 +259,12 @@ export const deleteEvent = mutation({
   },
 });
 
-// Attend an event
-export const attendEvent = mutation({
-  args: { eventId: v.id("events") },
+// Respond to an event (attending, absent, maybe)
+export const respondToEvent = mutation({
+  args: {
+    eventId: v.id("events"),
+    response: v.union(v.literal("attending"), v.literal("absent"), v.literal("maybe")),
+  },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
@@ -281,69 +284,36 @@ export const attendEvent = mutation({
       throw new Error("User profile not found");
     }
 
-    // Check if already attended
-    const existingAttendance = await ctx.db
-      .query("attendance")
+    // Check if response already exists
+    const existingResponse = await ctx.db
+      .query("eventResponses")
       .withIndex("by_event_profile", (q) => q.eq("eventId", args.eventId).eq("profileId", profile._id))
       .first();
 
-    if (existingAttendance) {
-      throw new Error("Already attended this event");
-    }
-
-    // Create attendance record
     const now = Date.now();
-    return await ctx.db.insert("attendance", {
-      eventId: args.eventId,
-      profileId: profile._id,
-      attendedAt: now,
-      recordedBy: userId,
-      method: "manual",
-      createdAt: now,
-    });
+
+    if (existingResponse) {
+      // Update existing response
+      return await ctx.db.patch(existingResponse._id, {
+        response: args.response,
+        updatedAt: now,
+      });
+    } else {
+      // Create new response
+      return await ctx.db.insert("eventResponses", {
+        eventId: args.eventId,
+        profileId: profile._id,
+        response: args.response,
+        recordedBy: userId,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
   },
 });
 
-// Remove attendance from an event
-export const removeAttendance = mutation({
-  args: { eventId: v.id("events") },
-  handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
-
-    // Extract user ID from compound subject (format: userId|sessionId)
-    const userId = identity.subject.split('|')[0] as Id<"users">;
-
-    // Get user's profile
-    const profile = await ctx.db
-      .query("profiles")
-      .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
-
-    if (!profile) {
-      throw new Error("User profile not found");
-    }
-
-    // Find attendance record
-    const attendance = await ctx.db
-      .query("attendance")
-      .withIndex("by_event_profile", (q) => q.eq("eventId", args.eventId).eq("profileId", profile._id))
-      .first();
-
-    if (!attendance) {
-      throw new Error("Not attending this event");
-    }
-
-    // Delete attendance record
-    await ctx.db.delete(attendance._id);
-    return { success: true };
-  },
-});
-
-// Check if a user is attending an event
-export const isUserAttendingEvent = query({
+// Get user's response to an event
+export const getUserEventResponse = query({
   args: {
     eventId: v.id("events"),
     userId: v.id("users"),
@@ -356,16 +326,54 @@ export const isUserAttendingEvent = query({
       .first();
 
     if (!profile) {
-      return false;
+      return null;
     }
 
-    // Check if attendance record exists
-    const attendance = await ctx.db
-      .query("attendance")
+    // Get user's response
+    const response = await ctx.db
+      .query("eventResponses")
       .withIndex("by_event_profile", (q) => q.eq("eventId", args.eventId).eq("profileId", profile._id))
       .first();
 
-    return !!attendance;
+    return response?.response || null;
+  },
+});
+
+// Remove user's response to an event
+export const removeEventResponse = mutation({
+  args: { eventId: v.id("events") },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    // Extract user ID from compound subject (format: userId|sessionId)
+    const userId = identity.subject.split('|')[0] as Id<"users">;
+
+    // Get user's profile
+    const profile = await ctx.db
+      .query("profiles")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .first();
+
+    if (!profile) {
+      throw new Error("User profile not found");
+    }
+
+    // Find response record
+    const response = await ctx.db
+      .query("eventResponses")
+      .withIndex("by_event_profile", (q) => q.eq("eventId", args.eventId).eq("profileId", profile._id))
+      .first();
+
+    if (!response) {
+      throw new Error("No response found for this event");
+    }
+
+    // Delete response record
+    await ctx.db.delete(response._id);
+    return { success: true };
   },
 });
 

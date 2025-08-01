@@ -109,122 +109,33 @@ export const scanAttendanceQrCode = mutation({
       throw new Error("QR code has expired");
     }
 
-    // Check if attendance already recorded
-    const existingAttendance = await ctx.db
-      .query("attendance")
+    // Check if response already recorded
+    const existingResponse = await ctx.db
+      .query("eventResponses")
       .withIndex("by_event_profile", (q) =>
         q.eq("eventId", qrCode.eventId).eq("profileId", args.profileId)
       )
       .first();
 
-    if (existingAttendance) {
-      throw new Error("Attendance already recorded for this event");
-    }
+    const now = Date.now();
 
-    // Record attendance
-    return await ctx.db.insert("attendance", {
-      eventId: qrCode.eventId,
-      profileId: args.profileId,
-      attendedAt: Date.now(),
-      recordedBy: identity.subject as Id<"users">,
-      method: "qr_code",
-      createdAt: Date.now(),
-    });
+    if (existingResponse) {
+      // Update existing response to "attending"
+      return await ctx.db.patch(existingResponse._id, {
+        response: "attending",
+        updatedAt: now,
+      });
+    } else {
+      // Create new response
+      return await ctx.db.insert("eventResponses", {
+        eventId: qrCode.eventId,
+        profileId: args.profileId,
+        response: "attending",
+        recordedBy: identity.subject as Id<"users">,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
   },
 });
 
-// Manually record attendance (for club admins)
-export const recordAttendanceManually = mutation({
-  args: {
-    eventId: v.id("events"),
-    profileId: v.id("profiles"),
-  },
-  handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
-
-    // Get the event to check club membership
-    const event = await ctx.db.get(args.eventId);
-    if (!event) {
-      throw new Error("Event not found");
-    }
-
-    // Verify that the user is an admin of the club that owns this event
-    const isAdmin = await isClubAdmin(ctx, identity.subject, event.clubId);
-    if (!isAdmin) {
-      throw new Error("Only club admins can manually record attendance");
-    }
-
-    // Check if attendance already recorded
-    const existingAttendance = await ctx.db
-      .query("attendance")
-      .withIndex("by_event_profile", (q) =>
-        q.eq("eventId", args.eventId).eq("profileId", args.profileId)
-      )
-      .first();
-
-    if (existingAttendance) {
-      throw new Error("Attendance already recorded for this event");
-    }
-
-    // Record attendance
-    return await ctx.db.insert("attendance", {
-      eventId: args.eventId,
-      profileId: args.profileId,
-      attendedAt: Date.now(),
-      recordedBy: identity.subject as Id<"users">,
-      method: "manual",
-      createdAt: Date.now(),
-    });
-  },
-});
-
-// Get attendance for an event
-export const getEventAttendance = query({
-  args: { eventId: v.id("events") },
-  handler: async (ctx, args) => {
-    const attendanceRecords = await ctx.db
-      .query("attendance")
-      .withIndex("by_event", (q) => q.eq("eventId", args.eventId))
-      .collect();
-
-    // Get profile information for each attendance record
-    const attendanceWithProfiles = await Promise.all(
-      attendanceRecords.map(async (record) => {
-        const profile = await ctx.db.get(record.profileId);
-        return {
-          ...record,
-          profile,
-        };
-      })
-    );
-
-    return attendanceWithProfiles;
-  },
-});
-
-// Get user's attendance history
-export const getUserAttendance = query({
-  args: { profileId: v.id("profiles") },
-  handler: async (ctx, args) => {
-    const attendanceRecords = await ctx.db
-      .query("attendance")
-      .withIndex("by_profile", (q) => q.eq("profileId", args.profileId))
-      .collect();
-
-    // Get event information for each attendance record
-    const attendanceWithEvents = await Promise.all(
-      attendanceRecords.map(async (record) => {
-        const event = await ctx.db.get(record.eventId);
-        return {
-          ...record,
-          event,
-        };
-      })
-    );
-
-    return attendanceWithEvents;
-  },
-});

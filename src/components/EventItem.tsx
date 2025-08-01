@@ -3,12 +3,11 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
-  ActivityIndicator,
   Platform,
 } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Ionicons } from '@expo/vector-icons'
+import Button from './Button'
 
 interface Event {
   _id: string
@@ -27,25 +26,22 @@ interface Event {
 interface EventItemProps {
   event: Event
   isMember?: boolean
-  isAttending?: boolean
-  onAttend?: (eventId: string) => Promise<void>
-  onCancelAttendance?: (eventId: string) => Promise<void>
+  userResponse?: 'attending' | 'absent' | 'maybe' | null
+  onRespond?: (eventId: string, response: 'attending' | 'absent' | 'maybe') => Promise<void>
   showClub?: boolean
 }
 
 export default function EventItem({
   event,
   isMember = false,
-  isAttending = false,
-  onAttend,
-  onCancelAttendance,
+  userResponse = null,
+  onRespond,
   showClub = false
 }: EventItemProps) {
   const { t, i18n } = useTranslation()
-  const [loading, setLoading] = useState(false)
+  const [loadingAction, setLoadingAction] = useState<'attending' | 'absent' | null>(null)
 
   const isUpcoming = event.startTime > Date.now()
-  const isPast = event.startTime < Date.now()
 
   const formatEventDate = (timestamp: number) => {
     const date = new Date(timestamp)
@@ -76,29 +72,16 @@ export default function EventItem({
     }
   }
 
-  const handleAttend = async () => {
-    if (!onAttend || loading) return
+  const handleRespond = async (response: 'attending' | 'absent' | 'maybe') => {
+    if (!onRespond || loadingAction) return
 
-    setLoading(true)
+    setLoadingAction(response as 'attending' | 'absent')
     try {
-      await onAttend(event._id)
+      await onRespond(event._id, response)
     } catch (error) {
-      console.error('Failed to attend event:', error)
+      console.error('Failed to respond to event:', error)
     } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleCancelAttendance = async () => {
-    if (!onCancelAttendance || loading) return
-
-    setLoading(true)
-    try {
-      await onCancelAttendance(event._id)
-    } catch (error) {
-      console.error('Failed to cancel attendance:', error)
-    } finally {
-      setLoading(false)
+      setLoadingAction(null)
     }
   }
 
@@ -111,16 +94,7 @@ export default function EventItem({
             <Text style={styles.eventClub}>{event.club.name}</Text>
           )}
         </View>
-        {isUpcoming && isMember && (
-          <View style={styles.attendanceStatus}>
-            {isAttending && (
-              <View style={styles.attendingBadge}>
-                <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
-                <Text style={styles.attendingText}>{t('events.attending')}</Text>
-              </View>
-            )}
-          </View>
-        )}
+
       </View>
 
       <View style={styles.eventDetails}>
@@ -153,46 +127,72 @@ export default function EventItem({
         <Text style={styles.eventDescription}>{event.description}</Text>
       )}
 
-      {isMember && isUpcoming && (onAttend || onCancelAttendance) && (
+      {isMember && isUpcoming && onRespond && (
         <View style={styles.eventActions}>
-          {!isAttending ? (
-            <TouchableOpacity
-              style={[
-                styles.attendButton,
-                loading && styles.buttonDisabled
-              ]}
-              onPress={handleAttend}
-              disabled={loading || !onAttend}
-              activeOpacity={0.7}
-            >
-              {loading ? (
-                <ActivityIndicator size="small" color="white" />
-              ) : (
-                <>
-                  <Ionicons name="add-circle-outline" size={20} color="white" />
-                  <Text style={styles.attendButtonText}>{t('events.attend')}</Text>
-                </>
-              )}
-            </TouchableOpacity>
+          {userResponse === 'attending' ? (
+            // Currently attending - show status and absent button
+            <>
+              <View style={styles.responseStatus}>
+                <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
+                <Text style={[styles.responseText, styles.attendingText]}>
+                  {t('events.attending')}
+                </Text>
+              </View>
+              <Button
+                title={t('events.absent')}
+                onPress={() => handleRespond('absent')}
+                variant="secondary"
+                size="small"
+                icon="close-circle-outline"
+                disabled={!!loadingAction}
+                loading={loadingAction === 'absent'}
+                style={styles.actionButton}
+              />
+            </>
+          ) : userResponse === 'absent' ? (
+            // Currently absent - show attend button and status
+            <>
+              <Button
+                title={t('events.attend')}
+                onPress={() => handleRespond('attending')}
+                variant="secondary"
+                size="small"
+                icon="checkmark-circle-outline"
+                disabled={!!loadingAction}
+                loading={loadingAction === 'attending'}
+                style={styles.actionButton}
+              />
+              <View style={styles.responseStatus}>
+                <Ionicons name="close-circle" size={20} color="#f44336" />
+                <Text style={[styles.responseText, styles.absentText]}>
+                  {t('events.absent')}
+                </Text>
+              </View>
+            </>
           ) : (
-            <TouchableOpacity
-              style={[
-                styles.cancelButton,
-                loading && styles.buttonDisabled
-              ]}
-              onPress={handleCancelAttendance}
-              disabled={loading || !onCancelAttendance}
-              activeOpacity={0.7}
-            >
-              {loading ? (
-                <ActivityIndicator size="small" color="#666" />
-              ) : (
-                <>
-                  <Ionicons name="close-circle-outline" size={20} color="#666" />
-                  <Text style={styles.cancelButtonText}>{t('events.cancelAttendance')}</Text>
-                </>
-              )}
-            </TouchableOpacity>
+            // No response yet - show both buttons
+            <>
+              <Button
+                title={t('events.attend')}
+                onPress={() => handleRespond('attending')}
+                variant="secondary"
+                size="small"
+                icon="checkmark-circle-outline"
+                disabled={!!loadingAction}
+                loading={loadingAction === 'attending'}
+                style={styles.actionButton}
+              />
+              <Button
+                title={t('events.absent')}
+                onPress={() => handleRespond('absent')}
+                variant="secondary"
+                size="small"
+                icon="close-circle-outline"
+                disabled={!!loadingAction}
+                loading={loadingAction === 'absent'}
+                style={styles.actionButton}
+              />
+            </>
           )}
         </View>
       )}
@@ -231,18 +231,29 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     marginTop: 4,
   },
-  attendanceStatus: {
-    marginLeft: 8,
-  },
-  attendingBadge: {
+  responseStatus: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    justifyContent: 'center',
+    gap: 6,
+    flex: 1,
+    minWidth: 0, // Allow flex to control width
+    minHeight: 40, // Match button height
+    paddingHorizontal: 12, // Match button padding
+    paddingVertical: 6, // Match button padding
+  },
+  responseText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   attendingText: {
-    fontSize: 12,
     color: '#4CAF50',
-    fontWeight: '600',
+  },
+  absentText: {
+    color: '#f44336',
+  },
+  maybeText: {
+    color: '#FF9800',
   },
   eventDetails: {
     gap: 4,
@@ -266,48 +277,12 @@ const styles = StyleSheet.create({
   eventActions: {
     flexDirection: 'row',
     gap: 8,
+    alignItems: 'stretch', // Stretch to match heights
+    width: '100%', // Ensure full width usage
   },
-  attendButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#4CAF50',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 10,
-    gap: 6,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  attendButtonText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  cancelButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 10,
-    gap: 6,
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-  },
-  cancelButtonText: {
-    color: '#666',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  buttonDisabled: {
-    opacity: 0.6,
+  actionButton: {
+    flex: 1,
+    minWidth: 0, // Allow flex to control width
+    minHeight: 40, // Ensure consistent height
   },
 })

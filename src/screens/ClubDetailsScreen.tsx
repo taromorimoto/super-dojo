@@ -36,8 +36,7 @@ export default function ClubDetailsScreen() {
   const leaveClub = useMutation(api.clubs.leaveClub);
   const updateClub = useMutation(api.clubs.updateClub);
   const updateMemberRole = useMutation(api.clubs.updateMemberRole);
-  const attendEvent = useMutation(api.events.attendEvent);
-  const removeAttendance = useMutation(api.events.removeAttendance);
+  const respondToEvent = useMutation(api.events.respondToEvent);
 
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -164,33 +163,25 @@ export default function ClubDetailsScreen() {
     }));
   };
 
-  const handleAttendEvent = async (eventId: string) => {
+
+
+  const handleRespondToEvent = async (eventId: string, response: 'attending' | 'absent' | 'maybe') => {
     if (!user) {
       Alert.alert(t('auth.required'), t('auth.loginToAttend'));
       return;
     }
 
     try {
-      await attendEvent({ eventId: eventId as any });
-      Alert.alert(t('events.attendSuccess'), t('events.attendSuccessMessage'));
+      await respondToEvent({ eventId: eventId as any, response });
     } catch (error: any) {
-      Alert.alert(t('error.title'), error.message || t('events.attendError'));
+      Alert.alert(t('error.title'), error.message || t('events.responseError'));
     }
   };
 
-  const handleRemoveAttendance = async (eventId: string) => {
-    try {
-      await removeAttendance({ eventId: eventId as any });
-      Alert.alert(t('events.removeAttendanceSuccess'), t('events.removeAttendanceSuccessMessage'));
-    } catch (error: any) {
-      Alert.alert(t('error.title'), error.message || t('events.removeAttendanceError'));
-    }
-  };
-
-  // Component to render event item with attendance status
-  const EventItemWithAttendance = ({ event }: { event: any }) => {
-    const isAttending = useQuery(
-      api.events.isUserAttendingEvent,
+  // Component to render event item with response status
+  const EventItemWithResponse = ({ event }: { event: any }) => {
+    const userResponse = useQuery(
+      api.events.getUserEventResponse,
       user ? { eventId: event._id, userId: user._id as Id<"users"> } : "skip"
     );
 
@@ -198,15 +189,14 @@ export default function ClubDetailsScreen() {
       <EventItem
         event={event}
         isMember={isMember}
-        isAttending={isAttending || false}
-        onAttend={handleAttendEvent}
-        onCancelAttendance={handleRemoveAttendance}
+        userResponse={userResponse}
+        onRespond={handleRespondToEvent}
       />
     );
   };
 
   const renderEventItem = ({ item }: any) => (
-    <EventItemWithAttendance event={item} />
+    <EventItemWithResponse event={item} />
   );
 
   const renderMemberItem = ({ item }: any) => {

@@ -79,17 +79,20 @@ export default defineSchema({
    .index("by_sync_generation", ["calendarSyncId", "syncGeneration"])
    .index("by_recurring_event", ["recurringEventId"]),
 
-  // Event attendance tracking
-  attendance: defineTable({
+
+
+  // Event responses (planning to attend, absent, etc.)
+  eventResponses: defineTable({
     eventId: v.id("events"),
     profileId: v.id("profiles"),
-    attendedAt: v.number(),
+    response: v.union(v.literal("attending"), v.literal("absent"), v.literal("maybe")),
     recordedBy: v.id("users"), // Convex Auth user ID
-    method: v.union(v.literal("qr_code"), v.literal("manual")),
     createdAt: v.number(),
+    updatedAt: v.number(),
   }).index("by_event", ["eventId"])
    .index("by_profile", ["profileId"])
-   .index("by_event_profile", ["eventId", "profileId"]),
+   .index("by_event_profile", ["eventId", "profileId"])
+   .index("by_event_response", ["eventId", "response"]),
 
   // QR codes for attendance tracking
   attendanceQrCodes: defineTable({
