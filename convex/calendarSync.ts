@@ -2,6 +2,7 @@ import { query, mutation, action } from "./_generated/server";
 import { v } from "convex/values";
 import { Id } from "./_generated/dataModel";
 import { api } from "./_generated/api";
+import { parseICSProperty, parseICSDate, parseExDates } from "./utils/icsParser";
 
 // Helper function to check if user is admin of a club
 const isClubAdmin = async (ctx: any, userId: string, clubId: string): Promise<boolean> => {
@@ -136,29 +137,7 @@ export const deleteCalendarSync = mutation({
   },
 });
 
-// Parse ICS date format to timestamp
-const parseICSDate = (dateStr: string): number => {
-  // Handle different ICS date formats
-  if (dateStr.includes('T')) {
-    // Format: YYYYMMDDTHHMMSSZ or YYYYMMDDTHHMMSS
-    const cleanDate = dateStr.replace(/[TZ]/g, '');
-    const year = parseInt(cleanDate.substr(0, 4));
-    const month = parseInt(cleanDate.substr(4, 2)) - 1; // Month is 0-indexed
-    const day = parseInt(cleanDate.substr(6, 2));
-    const hour = parseInt(cleanDate.substr(8, 2)) || 0;
-    const minute = parseInt(cleanDate.substr(10, 2)) || 0;
-    const second = parseInt(cleanDate.substr(12, 2)) || 0;
 
-    return new Date(year, month, day, hour, minute, second).getTime();
-  } else {
-    // Format: YYYYMMDD (all-day event)
-    const year = parseInt(dateStr.substr(0, 4));
-    const month = parseInt(dateStr.substr(4, 2)) - 1;
-    const day = parseInt(dateStr.substr(6, 2));
-
-    return new Date(year, month, day).getTime();
-  }
-};
 
 // Parse RRULE (Recurrence Rule) from ICS format
 interface RecurrenceRule {
@@ -330,13 +309,7 @@ const getNextMonthDayOccurrence = (currentDate: Date, byMonthDay: number[], inte
   return new Date(currentDate);
 };
 
-// Parse EXDATE (exception dates) from ICS
-const parseExDates = (exDateStr: string): number[] => {
-  if (!exDateStr) return [];
 
-  const dates = exDateStr.split(',');
-  return dates.map(dateStr => parseICSDate(dateStr.trim()));
-};
 
 // Parse ICS content and extract events with recurring support
 const parseICSContent = (icsContent: string): any[] => {
@@ -372,9 +345,20 @@ const parseICSContent = (icsContent: string): any[] => {
             i++;
           }
           i--; // Back up one since the for loop will increment
-          currentEvent[key] = fullValue;
+
+          // For date properties, store the full property line to preserve timezone info
+          if (key === 'DTSTART' || key === 'DTEND' || key === 'EXDATE') {
+            currentEvent[key] = line.substring(0, colonIndex) + ':' + fullValue;
+          } else {
+            currentEvent[key] = fullValue;
+          }
         } else {
-          currentEvent[key] = value;
+          // For date properties, store the full property line to preserve timezone info
+          if (key === 'DTSTART' || key === 'DTEND' || key === 'EXDATE') {
+            currentEvent[key] = line;
+          } else {
+            currentEvent[key] = value;
+          }
         }
       }
     }

@@ -21,6 +21,7 @@ import type * as clubs from "../clubs.js";
 import type * as events from "../events.js";
 import type * as http from "../http.js";
 import type * as seed from "../seed.js";
+import type * as utils_icsParser from "../utils/icsParser.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -39,6 +40,7 @@ declare const fullApi: ApiFromModules<{
   events: typeof events;
   http: typeof http;
   seed: typeof seed;
+  "utils/icsParser": typeof utils_icsParser;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,
