@@ -324,42 +324,14 @@ export const deleteUserAccount = mutation({
         .collect();
       await Promise.all(feedPosts.map(p => ctx.db.delete(p._id)));
 
-      // 4. Delete attendance records recorded by user
-      const attendanceRecords = await ctx.db
-        .query("attendance")
+      // 4. Delete event responses recorded by user
+      const eventResponses = await ctx.db
+        .query("eventResponses")
         .filter((q) => q.eq(q.field("recordedBy"), userId))
         .collect();
-      await Promise.all(attendanceRecords.map(a => ctx.db.delete(a._id)));
+      await Promise.all(eventResponses.map(er => ctx.db.delete(er._id)));
 
-      // 5. Delete QR codes created by user
-      const qrCodes = await ctx.db
-        .query("attendanceQrCodes")
-        .filter((q) => q.eq(q.field("createdBy"), userId))
-        .collect();
-      await Promise.all(qrCodes.map(qr => ctx.db.delete(qr._id)));
-
-      // 6. Delete marketplace listings
-      const listings = await ctx.db
-        .query("marketplaceListings")
-        .withIndex("by_seller", (q) => q.eq("sellerId", userId))
-        .collect();
-      await Promise.all(listings.map(l => ctx.db.delete(l._id)));
-
-      // 7. Delete marketplace messages (sent and received)
-      const sentMessages = await ctx.db
-        .query("marketplaceMessages")
-        .filter((q) => q.eq(q.field("senderId"), userId))
-        .collect();
-      const receivedMessages = await ctx.db
-        .query("marketplaceMessages")
-        .filter((q) => q.eq(q.field("receiverId"), userId))
-        .collect();
-      await Promise.all([
-        ...sentMessages.map(m => ctx.db.delete(m._id)),
-        ...receivedMessages.map(m => ctx.db.delete(m._id))
-      ]);
-
-      // 8. Delete calendar syncs created by user
+      // 5. Delete calendar syncs created by user
       const calendarSyncs = await ctx.db
         .query("calendarSyncs")
         .filter((q) => q.eq(q.field("createdBy"), userId))

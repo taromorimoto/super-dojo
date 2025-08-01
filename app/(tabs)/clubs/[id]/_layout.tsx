@@ -6,7 +6,7 @@ export default function ClubLayout() {
     <Stack>
       <Stack.Screen
         name="index"
-        options={{ title: 'Club Details' }}
+        options={{ title: 'Club Details'}}
       />
       <Stack.Screen
         name="settings"

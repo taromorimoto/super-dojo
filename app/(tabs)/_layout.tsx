@@ -49,15 +49,7 @@ export default function TabsLayout() {
             case 'clubs':
               iconName = focused ? 'people' : 'people-outline';
               break;
-            case 'events':
-              iconName = focused ? 'calendar' : 'calendar-outline';
-              break;
-            case 'attendance':
-              iconName = focused ? 'qr-code' : 'qr-code-outline';
-              break;
-            case 'marketplace':
-              iconName = focused ? 'storefront' : 'storefront-outline';
-              break;
+
             case 'profile':
               iconName = focused ? 'person' : 'person-outline';
               break;
@@ -78,20 +70,9 @@ export default function TabsLayout() {
       />
       <Tabs.Screen
         name="clubs"
-        options={{ title: t('navigation.clubs') }}
+        options={{ title: t('navigation.clubs'), headerShown: false }}
       />
-      <Tabs.Screen
-        name="events"
-        options={{ title: t('navigation.events') }}
-      />
-      <Tabs.Screen
-        name="attendance"
-        options={{ title: t('navigation.attendance') }}
-      />
-      <Tabs.Screen
-        name="marketplace"
-        options={{ title: t('navigation.marketplace') }}
-      />
+
       <Tabs.Screen
         name="profile"
         options={{ title: t('navigation.profile') }}

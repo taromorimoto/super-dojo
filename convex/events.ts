@@ -23,22 +23,7 @@ export const getClubEvents = query({
       .order("desc")
       .collect();
 
-    // Get attendance counts for each event
-    const eventsWithAttendance = await Promise.all(
-      events.map(async (event) => {
-        const attendanceCount = await ctx.db
-          .query("attendance")
-          .withIndex("by_event", (q) => q.eq("eventId", event._id))
-          .collect();
-
-        return {
-          ...event,
-          attendeeCount: attendanceCount.length,
-        };
-      })
-    );
-
-    return eventsWithAttendance;
+    return events;
   },
 });
 
@@ -233,25 +218,7 @@ export const deleteEvent = mutation({
       throw new Error("Only club admins can delete events");
     }
 
-    // Delete related attendance records
-    const attendanceRecords = await ctx.db
-      .query("attendance")
-      .withIndex("by_event", (q) => q.eq("eventId", args.id))
-      .collect();
 
-    await Promise.all(
-      attendanceRecords.map(record => ctx.db.delete(record._id))
-    );
-
-    // Delete related QR codes
-    const qrCodes = await ctx.db
-      .query("attendanceQrCodes")
-      .withIndex("by_event", (q) => q.eq("eventId", args.id))
-      .collect();
-
-    await Promise.all(
-      qrCodes.map(qr => ctx.db.delete(qr._id))
-    );
 
     // Delete the event
     await ctx.db.delete(args.id);

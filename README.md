@@ -6,33 +6,19 @@ A comprehensive martial arts club management application built with Expo React N
 
 ### 🏯 Club Management
 - View clubs and their information
-- Club practice schedules and sports offered
+- Club practice schedules via events
 - Member directories
-- Club announcement feed
+- Club announcement feed maybe linked to WhatsApp group?
 
 ### 👥 User Profiles & Authentication
 - Role-based access (Student, Sensei, Club Admin, Guardian)
 - Profile management with Dan/Kyu grades
-- Passkey authentication support (planned)
+- Convex authentication (Passkey support planned)
 - Multilingual support (English & Finnish)
 
 ### 📅 Event Management
-- Training session tracking
-- Event calendar with ICS import support
-- Competition and seminar scheduling
+- Event calendar with ICS url sync support (one time and recurring events)
 - Event attendance tracking
-
-### 📱 QR Code Attendance
-- Sensei can generate QR codes for events
-- Students scan to mark attendance
-- Automatic attendance logging
-- Manual attendance override for sensei
-
-### 🛒 Marketplace Lite
-- Second-hand bogu and equipment listings
-- Category-based browsing (Bogu, Shinai, Keikogi, etc.)
-- Direct messaging between buyers and sellers
-- Condition ratings and pricing
 
 ### 🌍 Internationalization
 - Finnish and English language support
@@ -42,10 +28,10 @@ A comprehensive martial arts club management application built with Expo React N
 ## Architecture
 
 - **Frontend**: Expo React Native with TypeScript
-- **Backend**: Convex for real-time data and functions
-- **Authentication**: Passkey-based authentication
+- **Backend**: Convex
+- **Authentication**: Convex authentication (Passkey support planned)
 - **State Management**: React Context + Convex queries
-- **Navigation**: React Navigation v6
+- **Navigation**: Expo Router
 - **Styling**: React Native StyleSheet
 - **Testing**: Jest + React Native Testing Library + Playwright
 - **CI/CD**: GitHub Actions
@@ -55,9 +41,10 @@ A comprehensive martial arts club management application built with Expo React N
 ### Prerequisites
 
 - Node.js 18 or higher
-- npm or yarn
+- npm
 - Expo CLI (`npm install -g @expo/cli`)
 - Git
+- Convex
 
 ### Installation
 

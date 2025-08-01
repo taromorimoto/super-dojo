@@ -13,7 +13,6 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
-import type * as attendance from "../attendance.js";
 import type * as auth from "../auth.js";
 import type * as calendarSync from "../calendarSync.js";
 import type * as clubFeed from "../clubFeed.js";
@@ -32,7 +31,6 @@ import type * as utils_icsParser from "../utils/icsParser.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
-  attendance: typeof attendance;
   auth: typeof auth;
   calendarSync: typeof calendarSync;
   clubFeed: typeof clubFeed;

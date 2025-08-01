@@ -94,53 +94,9 @@ export default defineSchema({
    .index("by_event_profile", ["eventId", "profileId"])
    .index("by_event_response", ["eventId", "response"]),
 
-  // QR codes for attendance tracking
-  attendanceQrCodes: defineTable({
-    eventId: v.id("events"),
-    code: v.string(), // Unique QR code string
-    createdBy: v.id("users"), // Convex Auth user ID
-    expiresAt: v.number(),
-    isActive: v.boolean(),
-    createdAt: v.number(),
-  }).index("by_code", ["code"])
-   .index("by_event", ["eventId"]),
 
-  // Marketplace listings for second-hand gear
-  marketplaceListings: defineTable({
-    title: v.string(),
-    description: v.string(),
-    price: v.optional(v.number()),
-    category: v.union(
-      v.literal("bogu"),
-      v.literal("shinai"),
-      v.literal("keikogi"),
-      v.literal("hakama"),
-      v.literal("accessories"),
-      v.literal("other")
-    ),
-    condition: v.union(v.literal("new"), v.literal("excellent"), v.literal("good"), v.literal("fair")),
-    images: v.array(v.string()), // URLs to uploaded images
-    sellerId: v.id("users"), // Convex Auth user ID
-    clubId: v.id("clubs"),
-    isAvailable: v.boolean(),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  }).index("by_club", ["clubId"])
-   .index("by_seller", ["sellerId"])
-   .index("by_category", ["category"])
-   .index("by_available", ["isAvailable"]),
 
-  // Messages for marketplace communications
-  marketplaceMessages: defineTable({
-    listingId: v.id("marketplaceListings"),
-    senderId: v.id("users"), // Convex Auth user ID
-    receiverId: v.id("users"), // Convex Auth user ID
-    content: v.string(),
-    isRead: v.boolean(),
-    createdAt: v.number(),
-  }).index("by_listing", ["listingId"])
-   .index("by_conversation", ["listingId", "senderId", "receiverId"])
-   .index("by_receiver", ["receiverId", "isRead"]),
+
 
   // Calendar sync configurations
   calendarSyncs: defineTable({

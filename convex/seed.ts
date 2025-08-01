@@ -10,8 +10,7 @@ export const forceClearAll = mutation({
     const tableNames = [
       "users", "authSessions", "authAccounts", "authVerificationCodes", "authVerifiers",
       "profiles", "clubs", "clubMemberships", "clubFeed",
-      "events", "attendance", "attendanceQrCodes",
-      "marketplaceListings", "marketplaceMessages", "calendarSyncs"
+      "events", "calendarSyncs"
     ];
 
     let totalDeleted = 0;
@@ -48,8 +47,7 @@ export const clearDatabase = mutation({
     const tables = [
       "users", "authSessions", "authAccounts", "authVerificationCodes", "authVerifiers",
       "profiles", "clubs", "clubMemberships", "clubFeed",
-      "events", "attendance", "attendanceQrCodes",
-      "marketplaceListings", "marketplaceMessages", "calendarSyncs"
+      "events", "calendarSyncs"
     ];
 
     for (const tableName of tables) {

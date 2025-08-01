@@ -38,9 +38,7 @@
     "home": "Home",
     "clubs": "Clubs",
     "events": "Events",
-    "profile": "Profile",
-    "marketplace": "Marketplace",
-    "attendance": "Attendance"
+    "profile": "Profile"
   },
   "club": {
     "clubs": "Clubs",
@@ -141,16 +139,7 @@
     "upcomingEvents": "Upcoming Events",
     "noUpcomingEvents": "No upcoming events"
   },
-  "attendance": {
-    "attendance": "Attendance",
-    "scanQR": "Scan QR Code",
-    "generateQR": "Generate QR Code",
-    "markAttendance": "Mark Attendance",
-    "attendanceRecorded": "Attendance recorded successfully",
-    "alreadyAttended": "Already marked as attended",
-    "qrExpired": "QR code has expired",
-    "invalidQR": "Invalid QR code"
-  },
+
   "feed": {
     "clubFeed": "Club Feed",
     "announcement": "Announcement",
@@ -162,27 +151,7 @@
     "postType": "Post Type",
     "noFeedPosts": "No feed posts yet"
   },
-  "marketplace": {
-    "marketplace": "Marketplace",
-    "listings": "Listings",
-    "createListing": "Create Listing",
-    "title": "Title",
-    "price": "Price",
-    "condition": "Condition",
-    "category": "Category",
-    "bogu": "Bogu",
-    "shinai": "Shinai",
-    "keikogi": "Keikogi",
-    "hakama": "Hakama",
-    "accessories": "Accessories",
-    "other": "Other",
-    "new": "New",
-    "excellent": "Excellent",
-    "good": "Good",
-    "fair": "Fair",
-    "contactSeller": "Contact Seller",
-    "noListings": "No listings found"
-  },
+
   "sports": {
     "kendo": "Kendo",
     "iaido": "Iaido",

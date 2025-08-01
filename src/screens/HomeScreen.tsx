@@ -59,28 +59,10 @@ export default function HomeScreen() {
 
   const quickActions = [
     {
-      id: 'scan-qr',
-      title: t('attendance.scanQR'),
-      icon: 'qr-code-outline',
-      color: '#2E7D32',
-    },
-    {
       id: 'club-feed',
       title: t('feed.clubFeed'),
       icon: 'chatbubbles-outline',
       color: '#1976D2',
-    },
-    {
-      id: 'marketplace',
-      title: t('marketplace.marketplace'),
-      icon: 'storefront-outline',
-      color: '#F57C00',
-    },
-    {
-      id: 'events',
-      title: t('events.events'),
-      icon: 'calendar-outline',
-      color: '#7B1FA2',
     },
   ];
 
@@ -159,7 +141,7 @@ export default function HomeScreen() {
         </View>
       )}
 
-      <View style={styles.quickActions}>
+      {/* <View style={styles.quickActions}>
         <Text style={styles.sectionTitle}>Quick Actions</Text>
         <View style={styles.actionsGrid}>
           {quickActions.map((action) => (
@@ -179,7 +161,7 @@ export default function HomeScreen() {
             </TouchableOpacity>
           ))}
         </View>
-      </View>
+      </View> */}
 
       {profile && (
         <>

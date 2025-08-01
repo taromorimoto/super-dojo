@@ -38,9 +38,7 @@
     "home": "Koti",
     "clubs": "Kerhot",
     "events": "Tapahtumat",
-    "profile": "Profiili",
-    "marketplace": "Kauppapaikka",
-    "attendance": "Läsnäolo"
+    "profile": "Profiili"
   },
   "club": {
     "clubs": "Kerhot",
@@ -141,16 +139,7 @@
     "upcomingEvents": "Tulevat tapahtumat",
     "noUpcomingEvents": "Ei tulevia tapahtumia"
   },
-  "attendance": {
-    "attendance": "Läsnäolo",
-    "scanQR": "Skannaa QR-koodi",
-    "generateQR": "Luo QR-koodi",
-    "markAttendance": "Merkitse läsnäolo",
-    "attendanceRecorded": "Läsnäolo merkitty onnistuneesti",
-    "alreadyAttended": "Jo merkitty läsnäolevaksi",
-    "qrExpired": "QR-koodi on vanhentunut",
-    "invalidQR": "Virheellinen QR-koodi"
-  },
+
   "feed": {
     "clubFeed": "Kerhon syöte",
     "announcement": "Ilmoitus",
@@ -162,27 +151,7 @@
     "postType": "Julkaisun tyyppi",
     "noFeedPosts": "Ei syötejulkaisuja vielä"
   },
-  "marketplace": {
-    "marketplace": "Kauppapaikka",
-    "listings": "Ilmoitukset",
-    "createListing": "Luo ilmoitus",
-    "title": "Otsikko",
-    "price": "Hinta",
-    "condition": "Kunto",
-    "category": "Kategoria",
-    "bogu": "Bogu",
-    "shinai": "Shinai",
-    "keikogi": "Keikogi",
-    "hakama": "Hakama",
-    "accessories": "Lisävarusteet",
-    "other": "Muu",
-    "new": "Uusi",
-    "excellent": "Erinomainen",
-    "good": "Hyvä",
-    "fair": "Kohtalainen",
-    "contactSeller": "Ota yhteyttä myyjään",
-    "noListings": "Ilmoituksia ei löytynyt"
-  },
+
   "sports": {
     "kendo": "Kendo",
     "iaido": "Iaido",
