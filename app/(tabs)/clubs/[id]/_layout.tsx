@@ -1,16 +1,16 @@
 import React from 'react';
 import { Stack } from 'expo-router';
 
-export default function ClubsLayout() {
+export default function ClubLayout() {
   return (
     <Stack>
       <Stack.Screen
         name="index"
-        options={{ headerShown: false }}
+        options={{ title: 'Club Details' }}
       />
       <Stack.Screen
-        name="[id]"
-        options={{ headerShown: false }}
+        name="settings"
+        options={{ title: 'Club Settings' }}
       />
     </Stack>
   );
