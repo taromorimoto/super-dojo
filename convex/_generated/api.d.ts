@@ -15,8 +15,10 @@ import type {
 } from "convex/server";
 import type * as attendance from "../attendance.js";
 import type * as auth from "../auth.js";
+import type * as calendarSync from "../calendarSync.js";
 import type * as clubFeed from "../clubFeed.js";
 import type * as clubs from "../clubs.js";
+import type * as events from "../events.js";
 import type * as http from "../http.js";
 import type * as seed from "../seed.js";
 
@@ -31,8 +33,10 @@ import type * as seed from "../seed.js";
 declare const fullApi: ApiFromModules<{
   attendance: typeof attendance;
   auth: typeof auth;
+  calendarSync: typeof calendarSync;
   clubFeed: typeof clubFeed;
   clubs: typeof clubs;
+  events: typeof events;
   http: typeof http;
   seed: typeof seed;
 }>;

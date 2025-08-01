@@ -13,6 +13,22 @@ const isClubAdmin = async (ctx: any, userId: string, clubId: string): Promise<bo
   return membership?.role === "admin";
 };
 
+// Helper function to auto-promote single member to admin
+const ensureClubHasAdmin = async (ctx: any, clubId: string): Promise<void> => {
+  const activeMembers = await ctx.db
+    .query("clubMemberships")
+    .withIndex("by_club_status", (q: any) => q.eq("clubId", clubId).eq("status", "active"))
+    .collect();
+
+  // If club has exactly one member and they're not an admin, promote them
+  if (activeMembers.length === 1 && activeMembers[0].role !== "admin") {
+    await ctx.db.patch(activeMembers[0]._id, {
+      role: "admin",
+      updatedAt: Date.now(),
+    });
+  }
+};
+
 // Get all clubs
 export const getClubs = query({
   args: {},
@@ -142,13 +158,17 @@ export const joinClub = mutation({
           status: "active",
           updatedAt: Date.now(),
         });
+
+        // Ensure club has an admin (auto-promote if only member)
+        await ensureClubHasAdmin(ctx, args.clubId);
+
         return existingMembership._id;
       }
     }
 
     // Create new membership
     const now = Date.now();
-    return await ctx.db.insert("clubMemberships", {
+    const membershipId = await ctx.db.insert("clubMemberships", {
       userId: userId,
       clubId: args.clubId,
       role: "member",
@@ -156,6 +176,11 @@ export const joinClub = mutation({
       joinedAt: now,
       updatedAt: now,
     });
+
+    // Ensure club has an admin (auto-promote if only member)
+    await ensureClubHasAdmin(ctx, args.clubId);
+
+    return membershipId;
   },
 });
 
@@ -186,6 +211,11 @@ export const leaveClub = mutation({
       status: "inactive",
       updatedAt: Date.now(),
     });
+
+    // If the club is now empty, ensure the only member is promoted to admin
+    if (membership.role === "admin") {
+      await ensureClubHasAdmin(ctx, args.clubId);
+    }
 
     return membership._id;
   },
