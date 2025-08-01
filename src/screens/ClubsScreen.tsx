@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -6,10 +6,9 @@ import {
   FlatList,
   TouchableOpacity,
   RefreshControl,
-  Alert,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useQuery, useMutation } from 'convex/react';
+import { useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthContext } from '../context/AuthContext';
@@ -29,97 +28,29 @@ export default function ClubsScreen() {
   const { t } = useTranslation();
   const { user } = useAuthContext();
   const clubs = useQuery(api.clubs.getClubs);
-      const userMemberships = useQuery(api.clubs.getUserMemberships,
+  const userMemberships = useQuery(api.clubs.getUserMemberships,
     user ? { userId: user._id } : "skip"
   );
-
-  const joinClub = useMutation(api.clubs.joinClub);
-  const leaveClub = useMutation(api.clubs.leaveClub);
-
-  const [loadingClubIds, setLoadingClubIds] = useState<Set<string>>(new Set());
 
   // Check if user is member of a club
   const isMemberOfClub = (clubId: string) => {
     return userMemberships?.some(membership => membership.clubId === clubId);
   };
 
-  const handleJoinClub = async (clubId: string, clubName: string) => {
-    if (!user) {
-      Alert.alert(t('auth.required'), t('auth.loginToJoin'));
-      return;
-    }
-
-    // Wait for memberships to load before checking
-    if (userMemberships === undefined) {
-      Alert.alert(t('error.title'), t('common.loading'));
-      return;
-    }
-
-    // Check if already a member before attempting to join
-    const isAlreadyMember = isMemberOfClub(clubId);
-    if (isAlreadyMember) {
-      Alert.alert(t('error.title'), t('club.alreadyMember'));
-      return;
-    }
-
-    setLoadingClubIds(prev => new Set([...prev, clubId]));
-
-    try {
-      await joinClub({ clubId: clubId as any });
-      Alert.alert(t('club.joinSuccess'), t('club.joinSuccessMessage', { clubName }));
-    } catch (error: any) {
-      Alert.alert(t('error.title'), error.message || t('club.joinError'));
-    } finally {
-      setLoadingClubIds(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(clubId);
-        return newSet;
-      });
-    }
-  };
-
-  const handleLeaveClub = (clubId: string, clubName: string) => {
-    Alert.alert(
-      t('club.leaveTitle'),
-      t('club.leaveConfirm', { clubName }),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('club.leave'),
-          style: 'destructive',
-          onPress: () => performLeaveClub(clubId)
-        }
-      ]
-    );
-  };
-
-  const performLeaveClub = async (clubId: string) => {
-    setLoadingClubIds(prev => new Set([...prev, clubId]));
-
-    try {
-      await leaveClub({ clubId: clubId as any });
-      Alert.alert(t('club.leaveSuccess'), t('club.leaveSuccessMessage'));
-    } catch (error: any) {
-      Alert.alert(t('error.title'), error.message || t('club.leaveError'));
-    } finally {
-      setLoadingClubIds(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(clubId);
-        return newSet;
-      });
-    }
-  };
-
   const renderClubCard = ({ item: club }: { item: Club }) => {
     const isMember = isMemberOfClub(club._id);
-    const isLoading = loadingClubIds.has(club._id);
     const membershipDataLoading = userMemberships === undefined;
 
     return (
       <Link href={`/(tabs)/clubs/${club._id}`} asChild>
         <TouchableOpacity style={styles.clubCard}>
         <View style={styles.clubHeader}>
-          <Text style={styles.clubName}>{club.name}</Text>
+          <View style={styles.clubNameContainer}>
+            {user && isMember && !membershipDataLoading && (
+              <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
+            )}
+            <Text style={styles.clubName}>{club.name}</Text>
+          </View>
           <Ionicons name="chevron-forward" size={20} color="#666" />
         </View>
 
@@ -143,39 +74,7 @@ export default function ClubsScreen() {
           </View>
         </View>
 
-        {/* Membership Action Button */}
-        {user && (
-          <View style={styles.actionContainer}>
-            <TouchableOpacity
-              style={[
-                styles.actionButton,
-                isMember ? styles.leaveButton : styles.joinButton,
-                (isLoading || membershipDataLoading) && styles.disabledButton
-              ]}
-              onPress={() =>
-                isMember
-                  ? handleLeaveClub(club._id, club.name)
-                  : handleJoinClub(club._id, club.name)
-              }
-              disabled={isLoading || membershipDataLoading}
-            >
-              {isLoading || membershipDataLoading ? (
-                <Text style={styles.actionButtonText}>{t('common.loading')}</Text>
-              ) : (
-                <>
-                  <Ionicons
-                    name={isMember ? "exit-outline" : "add-outline"}
-                    size={16}
-                    color="white"
-                  />
-                  <Text style={styles.actionButtonText}>
-                    {isMember ? t('club.leave') : t('club.join')}
-                  </Text>
-                </>
-              )}
-            </TouchableOpacity>
-          </View>
-        )}
+
         </TouchableOpacity>
       </Link>
     );
@@ -260,6 +159,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
+  clubNameContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+  },
   clubName: {
     fontSize: 18,
     fontWeight: 'bold',
@@ -296,34 +201,7 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: '500',
   },
-  actionContainer: {
-    marginTop: 16,
-    alignItems: 'center',
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    minWidth: 150,
-    gap: 8,
-  },
-  joinButton: {
-    backgroundColor: '#4CAF50',
-  },
-  leaveButton: {
-    backgroundColor: '#F44336',
-  },
-  actionButtonText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  disabledButton: {
-    opacity: 0.7,
-  },
+
   emptyState: {
     flex: 1,
     justifyContent: 'center',
