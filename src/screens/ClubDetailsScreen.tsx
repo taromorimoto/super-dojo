@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuthContext } from '../context/AuthContext';
 import { useLocalSearchParams } from 'expo-router';
 import { Id } from '../../convex/_generated/dataModel';
+import ConfirmModal from '../components/ConfirmModal';
 
 export default function ClubDetailsScreen() {
   const { t } = useTranslation();
@@ -42,6 +43,7 @@ export default function ClubDetailsScreen() {
     sports: [] as string[],
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
 
   // Initialize edit form when club data loads
   React.useEffect(() => {
@@ -60,55 +62,41 @@ export default function ClubDetailsScreen() {
 
   const handleJoinClub = async () => {
     if (!user) {
-      Alert.alert(t('auth.required'), t('auth.loginToJoin'));
+      console.log('Authentication required');
       return;
     }
 
-    // Wait for membership data to load before checking
     if (userMembership === undefined) {
-      Alert.alert(t('error.title'), t('common.loading'));
       return;
     }
 
-    // Check if already a member before attempting to join
     if (isMember) {
-      Alert.alert(t('error.title'), t('club.alreadyMember'));
+      console.log('Already a member');
       return;
     }
 
     setIsLoading(true);
     try {
       await joinClub({ clubId: clubId as any });
-      Alert.alert(t('club.joinSuccess'), t('club.joinSuccessMessage', { clubName: club?.name }));
+      console.log('Successfully joined club');
     } catch (error: any) {
-      Alert.alert(t('error.title'), error.message || t('club.joinError'));
+      console.error('Failed to join club:', error.message);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleLeaveClub = () => {
-    Alert.alert(
-      t('club.leaveTitle'),
-      t('club.leaveConfirm', { clubName: club?.name }),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('club.leave'),
-          style: 'destructive',
-          onPress: performLeaveClub
-        }
-      ]
-    );
+    setShowLeaveConfirm(true);
   };
 
   const performLeaveClub = async () => {
+    setShowLeaveConfirm(false);
     setIsLoading(true);
     try {
       await leaveClub({ clubId: clubId as any });
-      Alert.alert(t('club.leaveSuccess'), t('club.leaveSuccessMessage'));
     } catch (error: any) {
-      Alert.alert(t('error.title'), error.message || t('club.leaveError'));
+      console.error('Failed to leave club:', error.message);
     } finally {
       setIsLoading(false);
     }
@@ -388,6 +376,18 @@ export default function ClubDetailsScreen() {
           </ScrollView>
         </View>
       </Modal>
+
+      {/* Leave Club Confirmation Modal */}
+      <ConfirmModal
+        visible={showLeaveConfirm}
+        title={t('club.leaveTitle')}
+        message={t('club.leaveConfirm', { clubName: club?.name })}
+        cancelText={t('common.cancel')}
+        confirmText={t('club.leave')}
+        onCancel={() => setShowLeaveConfirm(false)}
+        onConfirm={performLeaveClub}
+        confirmButtonStyle="destructive"
+      />
     </ScrollView>
   );
 }
@@ -619,4 +619,5 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: '600',
   },
+
 });
