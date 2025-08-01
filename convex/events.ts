@@ -342,6 +342,33 @@ export const removeAttendance = mutation({
   },
 });
 
+// Check if a user is attending an event
+export const isUserAttendingEvent = query({
+  args: {
+    eventId: v.id("events"),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    // Get user's profile
+    const profile = await ctx.db
+      .query("profiles")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .first();
+
+    if (!profile) {
+      return false;
+    }
+
+    // Check if attendance record exists
+    const attendance = await ctx.db
+      .query("attendance")
+      .withIndex("by_event_profile", (q) => q.eq("eventId", args.eventId).eq("profileId", profile._id))
+      .first();
+
+    return !!attendance;
+  },
+});
+
 // Create event from sync (used by calendar sync)
 export const createEventFromSync = mutation({
   args: {

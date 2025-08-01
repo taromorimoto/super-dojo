@@ -187,12 +187,26 @@ export default function ClubDetailsScreen() {
     }
   };
 
+  // Component to render event item with attendance status
+  const EventItemWithAttendance = ({ event }: { event: any }) => {
+    const isAttending = useQuery(
+      api.events.isUserAttendingEvent,
+      user ? { eventId: event._id, userId: user._id as Id<"users"> } : "skip"
+    );
+
+    return (
+      <EventItem
+        event={event}
+        isMember={isMember}
+        isAttending={isAttending || false}
+        onAttend={handleAttendEvent}
+        onCancelAttendance={handleRemoveAttendance}
+      />
+    );
+  };
+
   const renderEventItem = ({ item }: any) => (
-    <EventItem
-      event={item}
-      isMember={isMember}
-      onAttend={handleAttendEvent}
-    />
+    <EventItemWithAttendance event={item} />
   );
 
   const renderMemberItem = ({ item }: any) => {

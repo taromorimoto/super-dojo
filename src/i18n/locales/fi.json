@@ -31,6 +31,7 @@
     "passkeyNotSupported": "Pääsy-avaimet eivät ole tuettuja tässä laitteessa",
     "required": "Tunnistautuminen vaaditaan",
     "loginToJoin": "Kirjaudu sisään liittyäksesi kerhoihin",
+    "loginToAttend": "Kirjaudu sisään osallistuaksesi tapahtumaan",
     "success": "Onnistui"
   },
   "navigation": {
@@ -117,9 +118,14 @@
     "attendEvent": "Osallistu tapahtumaan",
     "attend": "Osallistu",
     "attendees": "osallistujaa",
+    "attending": "Osallistut",
+    "cancelAttendance": "Peru",
     "attendSuccess": "Ilmoittautuminen tapahtumaan onnistui",
     "attendSuccessMessage": "Sinut on ilmoitettu tähän tapahtumaan",
     "attendError": "Tapahtumaan ilmoittautuminen epäonnistui",
+    "removeAttendanceSuccess": "Osallistuminen peruttu",
+    "removeAttendanceSuccessMessage": "Osallistumisesi on peruttu",
+    "removeAttendanceError": "Osallistumisen peruminen epäonnistui",
     "types": {
       "training": "Harjoitus",
       "competition": "Kilpailu",

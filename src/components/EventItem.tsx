@@ -1,9 +1,11 @@
-import React from 'react'
+import React, { useState } from 'react'
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
+  ActivityIndicator,
+  Platform,
 } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Ionicons } from '@expo/vector-icons'
@@ -25,12 +27,22 @@ interface Event {
 interface EventItemProps {
   event: Event
   isMember?: boolean
-  onAttend?: (eventId: string) => void
+  isAttending?: boolean
+  onAttend?: (eventId: string) => Promise<void>
+  onCancelAttendance?: (eventId: string) => Promise<void>
   showClub?: boolean
 }
 
-export default function EventItem({ event, isMember = false, onAttend, showClub = false }: EventItemProps) {
+export default function EventItem({
+  event,
+  isMember = false,
+  isAttending = false,
+  onAttend,
+  onCancelAttendance,
+  showClub = false
+}: EventItemProps) {
   const { t, i18n } = useTranslation()
+  const [loading, setLoading] = useState(false)
 
   const isUpcoming = event.startTime > Date.now()
   const isPast = event.startTime < Date.now()
@@ -64,14 +76,30 @@ export default function EventItem({ event, isMember = false, onAttend, showClub 
     }
   }
 
-  const formatEventType = (type: string) => {
-    const typeMap = {
-      training: t('events.types.training'),
-      competition: t('events.types.competition'),
-      seminar: t('events.types.seminar'),
-      grading: t('events.types.grading'),
+  const handleAttend = async () => {
+    if (!onAttend || loading) return
+
+    setLoading(true)
+    try {
+      await onAttend(event._id)
+    } catch (error) {
+      console.error('Failed to attend event:', error)
+    } finally {
+      setLoading(false)
     }
-    return typeMap[type as keyof typeof typeMap] || type
+  }
+
+  const handleCancelAttendance = async () => {
+    if (!onCancelAttendance || loading) return
+
+    setLoading(true)
+    try {
+      await onCancelAttendance(event._id)
+    } catch (error) {
+      console.error('Failed to cancel attendance:', error)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -83,11 +111,16 @@ export default function EventItem({ event, isMember = false, onAttend, showClub 
             <Text style={styles.eventClub}>{event.club.name}</Text>
           )}
         </View>
-        <View style={[styles.eventTypeTag, isPast && styles.pastEventTypeTag]}>
-          <Text style={[styles.eventTypeText, isPast && styles.pastEventTypeText]}>
-            {formatEventType(event.type)}
-          </Text>
-        </View>
+        {isUpcoming && isMember && (
+          <View style={styles.attendanceStatus}>
+            {isAttending && (
+              <View style={styles.attendingBadge}>
+                <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
+                <Text style={styles.attendingText}>{t('events.attending')}</Text>
+              </View>
+            )}
+          </View>
+        )}
       </View>
 
       <View style={styles.eventDetails}>
@@ -120,15 +153,47 @@ export default function EventItem({ event, isMember = false, onAttend, showClub 
         <Text style={styles.eventDescription}>{event.description}</Text>
       )}
 
-      {isMember && isUpcoming && onAttend && (
+      {isMember && isUpcoming && (onAttend || onCancelAttendance) && (
         <View style={styles.eventActions}>
-          <TouchableOpacity
-            style={[styles.attendButton]}
-            onPress={() => onAttend(event._id)}
-          >
-            <Ionicons name="checkmark-outline" size={16} color="white" />
-            <Text style={styles.attendButtonText}>{t('events.attend')}</Text>
-          </TouchableOpacity>
+          {!isAttending ? (
+            <TouchableOpacity
+              style={[
+                styles.attendButton,
+                loading && styles.buttonDisabled
+              ]}
+              onPress={handleAttend}
+              disabled={loading || !onAttend}
+              activeOpacity={0.7}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color="white" />
+              ) : (
+                <>
+                  <Ionicons name="add-circle-outline" size={20} color="white" />
+                  <Text style={styles.attendButtonText}>{t('events.attend')}</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={[
+                styles.cancelButton,
+                loading && styles.buttonDisabled
+              ]}
+              onPress={handleCancelAttendance}
+              disabled={loading || !onCancelAttendance}
+              activeOpacity={0.7}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color="#666" />
+              ) : (
+                <>
+                  <Ionicons name="close-circle-outline" size={20} color="#666" />
+                  <Text style={styles.cancelButtonText}>{t('events.cancelAttendance')}</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          )}
         </View>
       )}
     </View>
@@ -160,28 +225,24 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
     backgroundColor: '#f5f5f5',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: 8,
     alignSelf: 'flex-start',
     marginTop: 4,
   },
-  eventTypeTag: {
-    backgroundColor: '#E3F2FD',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+  attendanceStatus: {
+    marginLeft: 8,
   },
-  pastEventTypeTag: {
-    backgroundColor: '#f5f5f5',
+  attendingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
-  eventTypeText: {
+  attendingText: {
     fontSize: 12,
-    color: '#1976D2',
-    fontWeight: '500',
-  },
-  pastEventTypeText: {
-    color: '#999',
+    color: '#4CAF50',
+    fontWeight: '600',
   },
   eventDetails: {
     gap: 4,
@@ -210,14 +271,43 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#4CAF50',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    gap: 4,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    gap: 6,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   attendButtonText: {
     color: 'white',
     fontSize: 14,
     fontWeight: '600',
+  },
+  cancelButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    gap: 6,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+  },
+  cancelButtonText: {
+    color: '#666',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
 })

@@ -31,6 +31,7 @@
     "passkeyNotSupported": "Passkeys are not supported on this device",
     "required": "Authentication Required",
     "loginToJoin": "Please log in to join clubs",
+    "loginToAttend": "Please log in to attend events",
     "success": "Success"
   },
   "navigation": {
@@ -117,9 +118,14 @@
     "attendEvent": "Attend Event",
     "attend": "Attend",
     "attendees": "attendees",
+    "attending": "Attending",
+    "cancelAttendance": "Cancel",
     "attendSuccess": "Successfully registered for event",
     "attendSuccessMessage": "You have been registered for this event",
     "attendError": "Failed to register for event",
+    "removeAttendanceSuccess": "Attendance cancelled",
+    "removeAttendanceSuccessMessage": "Your attendance has been cancelled",
+    "removeAttendanceError": "Failed to cancel attendance",
     "types": {
       "training": "Training",
       "competition": "Competition",

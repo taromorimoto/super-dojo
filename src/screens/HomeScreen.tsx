@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   FlatList,
+  Alert,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAuthContext } from '../context/AuthContext';
@@ -14,6 +15,7 @@ import { api } from '../../convex/_generated/api';
 import { Ionicons } from '@expo/vector-icons';
 import { Id } from '../../convex/_generated/dataModel';
 import EventItem from '../components/EventItem';
+import { useMutation } from 'convex/react';
 
 export default function HomeScreen() {
   const { t } = useTranslation();
@@ -23,6 +25,9 @@ export default function HomeScreen() {
     api.events.getUserUpcomingEvents,
     user ? { userId: user._id as Id<"users"> } : "skip"
   );
+
+  const attendEvent = useMutation(api.events.attendEvent);
+  const removeAttendance = useMutation(api.events.removeAttendance);
 
   const quickActions = [
     {
@@ -51,9 +56,55 @@ export default function HomeScreen() {
     },
   ];
 
+  const handleAttendEvent = async (eventId: string) => {
+    if (!user) {
+      Alert.alert(t('auth.required'), t('auth.loginToAttend'));
+      return;
+    }
+
+    try {
+      await attendEvent({ eventId: eventId as any });
+    } catch (error: any) {
+      Alert.alert(t('error.title'), error.message || t('events.attendError'));
+    }
+  };
+
+  const handleRemoveAttendance = async (eventId: string) => {
+    try {
+      await removeAttendance({ eventId: eventId as any });
+    } catch (error: any) {
+      Alert.alert(t('error.title'), error.message || t('events.removeAttendanceError'));
+    }
+  };
+
+  // Component to render event item with attendance status
+  const EventItemWithAttendance = ({ event }: { event: any }) => {
+    const isAttending = useQuery(
+      api.events.isUserAttendingEvent,
+      user ? { eventId: event._id, userId: user._id as Id<"users"> } : "skip"
+    );
+
+    // Check if user is member of the club
+    const userMembership = useQuery(
+      api.clubs.isUserMemberOfClub,
+      user && event.clubId ? { userId: user._id as Id<"users">, clubId: event.clubId } : "skip"
+    );
+
+    return (
+      <EventItem
+        event={event}
+        isMember={userMembership || false}
+        isAttending={isAttending || false}
+        onAttend={handleAttendEvent}
+        onCancelAttendance={handleRemoveAttendance}
+        showClub={true}
+      />
+    );
+  };
+
   const renderEventItem = ({ item }: any) => (
     <TouchableOpacity>
-      <EventItem event={item} showClub={true} />
+      <EventItemWithAttendance event={item} />
     </TouchableOpacity>
   );
 
