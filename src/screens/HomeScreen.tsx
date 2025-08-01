@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -20,6 +20,7 @@ import { useMutation } from 'convex/react';
 export default function HomeScreen() {
   const { t } = useTranslation();
   const { user, profile, signOut } = useAuthContext();
+  const [selectedSports, setSelectedSports] = useState<string[]>([]);
 
   const upcomingEvents = useQuery(
     api.events.getUserUpcomingEvents,
@@ -27,6 +28,34 @@ export default function HomeScreen() {
   );
 
   const respondToEvent = useMutation(api.events.respondToEvent);
+
+  const availableSports = ['kendo', 'iaido', 'jodo', 'naginata'];
+
+  // Filter events based on selected sports in event titles
+  const filteredEvents = useMemo(() => {
+    if (!upcomingEvents || selectedSports.length === 0) {
+      return upcomingEvents || [];
+    }
+
+    return upcomingEvents.filter(event => {
+      // Check if event title contains any of the selected sports
+      const eventTitle = event.title.toLowerCase();
+      return selectedSports.some(sport => {
+        const sportName = t(`sports.${sport}`).toLowerCase();
+        const englishSportName = sport.toLowerCase();
+        // Check both translated sport name and English sport name
+        return eventTitle.includes(sportName) || eventTitle.includes(englishSportName);
+      });
+    });
+  }, [upcomingEvents, selectedSports, t]);
+
+  const toggleSport = (sport: string) => {
+    setSelectedSports(prev =>
+      prev.includes(sport)
+        ? prev.filter(s => s !== sport)
+        : [...prev, sport]
+    );
+  };
 
   const quickActions = [
     {
@@ -86,7 +115,7 @@ export default function HomeScreen() {
     return (
       <EventItem
         event={event}
-        isMember={userMembership || false}
+        isMember={userMembership?.isMember || false}
         userResponse={userResponse}
         onRespond={handleRespondToEvent}
         showClub={true}
@@ -153,21 +182,47 @@ export default function HomeScreen() {
       </View>
 
       {profile && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
-            {t('events.upcomingEvents')} ({upcomingEvents?.length || 0})
-          </Text>
-          {upcomingEvents && upcomingEvents.length > 0 ? (
-            <FlatList
-              data={upcomingEvents.slice(0, 5)} // Show max 5 events on home screen
-              renderItem={renderEventItem}
-              keyExtractor={(item) => item._id}
-              scrollEnabled={false}
-            />
-          ) : (
-            <Text style={styles.emptyText}>{t('events.noUpcomingEvents')}</Text>
-          )}
-        </View>
+        <>
+          {/* Sports Filter */}
+          <View style={styles.sportsFilter}>
+            <Text style={styles.sectionTitle}>{t('club.sports')}</Text>
+            <View style={styles.sportsContainer}>
+              {availableSports.map((sport) => (
+                <TouchableOpacity
+                  key={sport}
+                  style={[
+                    styles.sportBadge,
+                    selectedSports.includes(sport) && styles.sportBadgeActive
+                  ]}
+                  onPress={() => toggleSport(sport)}
+                >
+                  <Text style={[
+                    styles.sportBadgeText,
+                    selectedSports.includes(sport) && styles.sportBadgeTextActive
+                  ]}>
+                    {t(`sports.${sport}`)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>
+              {t('events.upcomingEvents')} ({filteredEvents?.length || 0})
+            </Text>
+            {filteredEvents && filteredEvents.length > 0 ? (
+              <FlatList
+                data={filteredEvents.slice(0, 5)} // Show max 5 events on home screen
+                renderItem={renderEventItem}
+                keyExtractor={(item) => item._id}
+                scrollEnabled={false}
+              />
+            ) : (
+              <Text style={styles.emptyText}>{t('events.noUpcomingEvents')}</Text>
+            )}
+          </View>
+        </>
       )}
     </ScrollView>
   );
@@ -280,5 +335,35 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontStyle: 'italic',
     paddingVertical: 20,
+  },
+  sportsFilter: {
+    backgroundColor: 'white',
+    marginTop: 8,
+    padding: 20,
+  },
+  sportsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  sportBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    backgroundColor: 'white',
+  },
+  sportBadgeActive: {
+    backgroundColor: '#2E7D32',
+    borderColor: '#2E7D32',
+  },
+  sportBadgeText: {
+    fontSize: 12,
+    color: '#666',
+    fontWeight: '600',
+  },
+  sportBadgeTextActive: {
+    color: 'white',
   },
 });

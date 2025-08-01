@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -47,6 +47,7 @@ export default function ClubDetailsScreen() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [selectedSports, setSelectedSports] = useState<string[]>([]);
 
   // Initialize edit form when club data loads
   React.useEffect(() => {
@@ -59,6 +60,34 @@ export default function ClubDetailsScreen() {
       });
     }
   }, [club]);
+
+  const availableSports = ['kendo', 'iaido', 'jodo', 'naginata'];
+
+  // Filter events based on selected sports in event titles
+  const filteredEvents = useMemo(() => {
+    if (!clubEvents || selectedSports.length === 0) {
+      return clubEvents || [];
+    }
+
+    return clubEvents.filter(event => {
+      // Check if event title contains any of the selected sports
+      const eventTitle = event.title.toLowerCase();
+      return selectedSports.some(sport => {
+        const sportName = t(`sports.${sport}`).toLowerCase();
+        const englishSportName = sport.toLowerCase();
+        // Check both translated sport name and English sport name
+        return eventTitle.includes(sportName) || eventTitle.includes(englishSportName);
+      });
+    });
+  }, [clubEvents, selectedSports, t]);
+
+  const toggleSportFilter = (sport: string) => {
+    setSelectedSports(prev =>
+      prev.includes(sport)
+        ? prev.filter(s => s !== sport)
+        : [...prev, sport]
+    );
+  };
 
   const isAdmin = userMembership?.role === 'admin';
   const isMember = userMembership?.isMember;
@@ -335,11 +364,36 @@ export default function ClubDetailsScreen() {
       {clubEvents && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            {t('events.events')} ({clubEvents.filter(event => event.startTime > Date.now()).length})
+            {t('events.events')} ({filteredEvents.filter(event => event.startTime > Date.now()).length})
           </Text>
-          {clubEvents.filter(event => event.startTime > Date.now()).length > 0 ? (
+
+          {/* Sports Filter */}
+          <View style={styles.sportsFilterContainer}>
+            <Text style={styles.filterLabel}>{t('club.sports')}</Text>
+            <View style={styles.sportsContainer}>
+              {availableSports.map((sport) => (
+                <TouchableOpacity
+                  key={sport}
+                  style={[
+                    styles.sportBadge,
+                    selectedSports.includes(sport) && styles.sportBadgeActive
+                  ]}
+                  onPress={() => toggleSportFilter(sport)}
+                >
+                  <Text style={[
+                    styles.sportBadgeText,
+                    selectedSports.includes(sport) && styles.sportBadgeTextActive
+                  ]}>
+                    {t(`sports.${sport}`)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          {filteredEvents.filter(event => event.startTime > Date.now()).length > 0 ? (
             <FlatList
-              data={clubEvents
+              data={filteredEvents
                 .filter(event => event.startTime > Date.now())
                 .sort((a, b) => a.startTime - b.startTime)
               }
@@ -701,6 +755,38 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontStyle: 'italic',
     paddingVertical: 20,
+  },
+  sportsFilterContainer: {
+    marginBottom: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  filterLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
+  },
+  sportBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    backgroundColor: 'white',
+  },
+  sportBadgeActive: {
+    backgroundColor: '#2E7D32',
+    borderColor: '#2E7D32',
+  },
+  sportBadgeText: {
+    fontSize: 12,
+    color: '#666',
+    fontWeight: '600',
+  },
+  sportBadgeTextActive: {
+    color: 'white',
   },
 
 });
