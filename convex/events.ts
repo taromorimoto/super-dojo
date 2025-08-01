@@ -63,12 +63,11 @@ export const getUserUpcomingEvents = query({
           .withIndex("by_club_start_time", (q) => q.eq("clubId", clubId))
           .filter((q) => q.gte(q.field("startTime"), now))
           .order("asc")
-          .take(10) // Limit per club
-          .collect();
+          .take(10); // Limit per club
 
         // Add club information and attendance counts
         return Promise.all(
-          events.map(async (event) => {
+          events.map(async (event: any) => {
             const club = await ctx.db.get(clubId);
             const attendanceCount = await ctx.db
               .query("attendance")
@@ -87,7 +86,7 @@ export const getUserUpcomingEvents = query({
 
     // Flatten and sort by start time
     const flatEvents = allEvents.flat();
-    return flatEvents.sort((a, b) => a.startTime - b.startTime).slice(0, 20);
+    return flatEvents.sort((a: any, b: any) => a.startTime - b.startTime).slice(0, 20);
   },
 });
 

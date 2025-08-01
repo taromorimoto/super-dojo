@@ -1,6 +1,7 @@
 import { query, mutation, action } from "./_generated/server";
 import { v } from "convex/values";
 import { Id } from "./_generated/dataModel";
+import { api } from "./_generated/api";
 
 // Helper function to check if user is admin of a club
 const isClubAdmin = async (ctx: any, userId: string, clubId: string): Promise<boolean> => {
@@ -198,7 +199,7 @@ export const syncCalendarEvents = action({
   handler: async (ctx, args) => {
     try {
       // Get calendar sync configuration
-      const calendarSync = await ctx.runQuery("calendarSync:getCalendarSyncById", { 
+      const calendarSync = await ctx.runQuery(api.calendarSync.getCalendarSyncById, { 
         id: args.calendarSyncId 
       });
 
@@ -230,7 +231,7 @@ export const syncCalendarEvents = action({
           }
 
           // Check if event already exists
-          const existingEvent = await ctx.runQuery("calendarSync:findEventByExternalId", {
+          const existingEvent = await ctx.runQuery(api.calendarSync.findEventByExternalId, {
             externalId: icsEvent.UID,
             clubId: calendarSync.clubId,
           });
@@ -249,14 +250,14 @@ export const syncCalendarEvents = action({
 
           if (existingEvent) {
             // Update existing event
-            await ctx.runMutation("events:updateEventFromSync", {
+            await ctx.runMutation(api.events.updateEventFromSync, {
               id: existingEvent._id,
               ...eventData,
             });
             savedEvents.push({ ...eventData, _id: existingEvent._id, action: "updated" });
           } else {
             // Create new event
-            const eventId = await ctx.runMutation("events:createEventFromSync", eventData);
+            const eventId = await ctx.runMutation(api.events.createEventFromSync, eventData);
             savedEvents.push({ ...eventData, _id: eventId, action: "created" });
           }
         } catch (eventError) {
@@ -266,7 +267,7 @@ export const syncCalendarEvents = action({
       }
 
       // Update sync status
-      await ctx.runMutation("calendarSync:updateSyncStatus", {
+      await ctx.runMutation(api.calendarSync.updateSyncStatus, {
         id: args.calendarSyncId,
         lastSyncAt: now,
         lastSyncStatus: "success" as const,
@@ -281,7 +282,7 @@ export const syncCalendarEvents = action({
 
     } catch (error) {
       // Update sync status with error
-      await ctx.runMutation("calendarSync:updateSyncStatus", {
+      await ctx.runMutation(api.calendarSync.updateSyncStatus, {
         id: args.calendarSyncId,
         lastSyncAt: Date.now(),
         lastSyncStatus: "error" as const,
@@ -336,13 +337,13 @@ export const updateSyncStatus = mutation({
 // Action to sync all active calendar configurations
 export const syncAllActiveCalendars = action({
   args: {},
-  handler: async (ctx) => {
-    const activeCalendars = await ctx.runQuery("calendarSync:getActiveCalendarSyncs");
+  handler: async (ctx): Promise<any[]> => {
+    const activeCalendars: any = await ctx.runQuery(api.calendarSync.getActiveCalendarSyncs);
     
-    const results = [];
+    const results: any[] = [];
     for (const calendar of activeCalendars) {
       try {
-        const result = await ctx.runAction("calendarSync:syncCalendarEvents", {
+        const result: any = await ctx.runAction(api.calendarSync.syncCalendarEvents, {
           calendarSyncId: calendar._id,
         });
         results.push({ 
